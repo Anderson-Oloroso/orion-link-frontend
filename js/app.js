@@ -1,49 +1,115 @@
 import { ApiClient } from './api.js';
 import { ThemeManager } from './theme.js';
 import { UIUtils } from './utils.js';
+import { RoleWorkspaceStrategy } from './role-workspaces.js';
 
 /**
  * Controlador Orientado a Objetos del Dashboard Multi-Rol de Orion Link
- * Adapta vistas y permisos para: admin (NOC), support_agent (Soporte N1/N2),
- * field_tech (Técnico de Cuadrilla) y customer (Cliente Suscriptor).
+ * 1. Protección estricta contra Back-Forward Cache (bfcache): si el usuario cierra sesión
+ *    y presiona "Atrás" en el navegador, se fuerza la verificación y expulsión inmediata.
+ * 2. Polimorfismo de Interfaz por Rol: delega en RoleWorkspaceStrategy (AdminNocWorkspace,
+ *    SupportAgentWorkspace, FieldTechWorkspace y CustomerPortalWorkspace).
  */
 export class DashboardApp {
     static currentUser = null;
-    static contracts = [];
-    static crews = [];
+    static workspaceStrategy = null;
+    static state = {
+        summary: {},
+        contracts: [],
+        diagnostics: [],
+        outages: [],
+        tickets: [],
+        crews: [],
+        dispatches: [],
+        naps: [],
+        users: []
+    };
 
     static async init() {
+        DashboardApp.installBackButtonGuard();
         ThemeManager.init();
         await UIUtils.bindApiConnectionIndicator();
-        await DashboardApp.verifySession();
-        DashboardApp.configureRoleVisibility();
+
+        const isAuthenticated = await DashboardApp.verifySessionStrict();
+        if (!isAuthenticated) {
+            return;
+        }
+
+        DashboardApp.workspaceStrategy = RoleWorkspaceStrategy.createForRole(DashboardApp.currentUser.role);
+        DashboardApp.applyRoleHeaderAndTabs();
         DashboardApp.bindTabs();
         DashboardApp.bindActions();
         await DashboardApp.refreshAllData();
     }
 
-    static async verifySession() {
-        try {
-            const res = await ApiClient.get('/auth/me');
-            DashboardApp.currentUser = res.data;
-            ApiClient.setSession(ApiClient.getToken(), res.data);
-        } catch {
-            const cached = ApiClient.getStoredUser();
-            if (!cached) {
-                window.location.href = './auth.html';
-                return;
+    /**
+     * Guardia estructural contra el botón "Atrás" del navegador (bfcache / pageshow / visibilitychange)
+     */
+    static installBackButtonGuard() {
+        window.addEventListener('pageshow', async (event) => {
+            const navEntries = performance.getEntriesByType?.('navigation') || [];
+            const isBackForward = event.persisted || navEntries[0]?.type === 'back_forward';
+            if (isBackForward || !ApiClient.hasActiveSessionFlag()) {
+                await DashboardApp.verifySessionStrict();
             }
-            DashboardApp.currentUser = cached;
+        });
+
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && !ApiClient.hasActiveSessionFlag()) {
+                DashboardApp.forceRedirectToLogin();
+            }
+        });
+    }
+
+    static forceRedirectToLogin() {
+        ApiClient.clearSession();
+        document.body.innerHTML = '';
+        window.location.replace('./auth.html');
+    }
+
+    /**
+     * Verificación estricta de sesión: NUNCA cae en datos cacheados si la sesión fue cerrada
+     * o si el servidor devuelve 401 Unauthorized.
+     */
+    static async verifySessionStrict() {
+        if (!ApiClient.hasActiveSessionFlag()) {
+            DashboardApp.forceRedirectToLogin();
+            return false;
         }
 
-        const userBadge = document.getElementById('current-user-display');
-        if (userBadge && DashboardApp.currentUser) {
-            userBadge.textContent = `${DashboardApp.currentUser.fullName} · ${UIUtils.formatRoleLabel(DashboardApp.currentUser.role)}`;
+        try {
+            const res = await ApiClient.get('/auth/me');
+            if (!res || !res.data) {
+                DashboardApp.forceRedirectToLogin();
+                return false;
+            }
+            DashboardApp.currentUser = res.data;
+            ApiClient.setSession(ApiClient.getToken(), res.data);
+
+            const userBadge = document.getElementById('current-user-display');
+            if (userBadge) {
+                userBadge.textContent = `${DashboardApp.currentUser.fullName} · ${UIUtils.formatRoleLabel(DashboardApp.currentUser.role)}`;
+            }
+            return true;
+        } catch {
+            DashboardApp.forceRedirectToLogin();
+            return false;
         }
     }
 
-    static configureRoleVisibility() {
-        const role = DashboardApp.currentUser?.role || 'customer';
+    static applyRoleHeaderAndTabs() {
+        const strategy = DashboardApp.workspaceStrategy;
+        const role = DashboardApp.currentUser.role;
+
+        const badgeEl = document.getElementById('role-workspace-badge');
+        const titleEl = document.getElementById('role-workspace-title');
+        const subtitleEl = document.getElementById('role-workspace-subtitle');
+
+        if (badgeEl) badgeEl.textContent = strategy.badgeText;
+        if (titleEl) titleEl.textContent = strategy.workspaceTitle;
+        if (subtitleEl) subtitleEl.textContent = strategy.workspaceSubtitle;
+
+        // Mostrar u ocultar elementos exclusivos por atributo data-roles
         document.querySelectorAll('[data-roles]').forEach((el) => {
             const allowed = el.getAttribute('data-roles').split(',').map((r) => r.trim());
             if (!allowed.includes(role)) {
@@ -52,6 +118,26 @@ export class DashboardApp {
                 el.classList.remove('hidden');
             }
         });
+
+        // Filtrar las pestañas permitidas para este rol y activar su pestaña principal por defecto
+        const allowedTabs = strategy.allowedTabs;
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabButtons.forEach((btn) => {
+            const tabId = btn.getAttribute('data-tab');
+            if (!allowedTabs.includes(tabId)) {
+                btn.classList.add('hidden');
+                btn.classList.remove('active');
+            } else {
+                btn.classList.remove('hidden');
+                btn.classList.toggle('active', tabId === strategy.defaultTab);
+            }
+        });
+
+        tabPanels.forEach((panel) => {
+            panel.classList.toggle('active', panel.id === strategy.defaultTab);
+        });
     }
 
     static bindTabs() {
@@ -59,6 +145,7 @@ export class DashboardApp {
         const panels = document.querySelectorAll('.tab-panel');
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
+                if (btn.classList.contains('hidden')) return;
                 const target = btn.getAttribute('data-tab');
                 buttons.forEach((b) => b.classList.remove('active'));
                 panels.forEach((p) => p.classList.remove('active'));
@@ -73,87 +160,103 @@ export class DashboardApp {
             try {
                 await ApiClient.post('/auth/logout', {});
             } catch {
-                // Limpiar sesión local igualmente
+                // Continuar con limpieza total en cliente
             }
-            ApiClient.clearSession();
-            window.location.href = './auth.html';
+            DashboardApp.forceRedirectToLogin();
         });
 
         document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
             DashboardApp.refreshAllData();
         });
 
-        // Formulario de Diagnóstico Remoto FTTH
-        const diagForm = document.getElementById('form-run-diagnostic');
-        if (diagForm) {
-            diagForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const contractId = Number(document.getElementById('diag-contract-id').value);
-                const rawRx = document.getElementById('diag-simulated-rx').value.trim();
-                const simulatedRxDbm = rawRx !== '' ? Number(rawRx) : null;
+        // 1. Diagnóstico Remoto FTTH
+        document.getElementById('form-run-diagnostic')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const contractId = Number(document.getElementById('diag-contract-id').value);
+            const rawRx = document.getElementById('diag-simulated-rx')?.value?.trim() || '';
+            const simulatedRxDbm = rawRx !== '' ? Number(rawRx) : null;
 
-                try {
-                    const res = await ApiClient.post('/diagnostics/run', { contractId, simulatedRxDbm });
-                    UIUtils.showToast(res.message, res.data.opticalHealth === 'critical' ? 'error' : 'success');
-                    await DashboardApp.refreshAllData();
-                } catch (err) {
-                    UIUtils.showToast(err.message, 'error');
-                }
-            });
-        }
+            try {
+                const res = await ApiClient.post('/diagnostics/run', { contractId, simulatedRxDbm });
+                UIUtils.showToast(res.message, res.data.opticalHealth === 'critical' ? 'error' : 'success');
+                await DashboardApp.refreshAllData();
+            } catch (err) {
+                UIUtils.showToast(err.message, 'error');
+            }
+        });
 
-        // Formulario de Nuevo Ticket de Soporte
-        const ticketForm = document.getElementById('form-create-ticket');
-        if (ticketForm) {
-            ticketForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const payload = {
-                    contractId: Number(document.getElementById('tck-contract-id').value),
-                    category: document.getElementById('tck-category').value,
-                    priority: document.getElementById('tck-priority').value,
-                    subject: document.getElementById('tck-subject').value.trim(),
-                    description: document.getElementById('tck-description').value.trim()
-                };
+        // 2. Nuevo Ticket de Soporte
+        document.getElementById('form-create-ticket')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                contractId: Number(document.getElementById('tck-contract-id').value),
+                category: document.getElementById('tck-category').value,
+                priority: document.getElementById('tck-priority').value,
+                subject: document.getElementById('tck-subject').value.trim(),
+                description: document.getElementById('tck-description').value.trim()
+            };
 
-                try {
-                    const res = await ApiClient.post('/tickets', payload);
-                    UIUtils.showToast(res.message, 'success');
-                    ticketForm.reset();
-                    await DashboardApp.refreshAllData();
-                } catch (err) {
-                    UIUtils.showToast(err.message, 'error');
-                }
-            });
-        }
+            try {
+                const res = await ApiClient.post('/tickets', payload);
+                UIUtils.showToast(res.message, 'success');
+                e.target.reset();
+                await DashboardApp.refreshAllData();
+            } catch (err) {
+                UIUtils.showToast(err.message, 'error');
+            }
+        });
 
-        // Formulario de Nueva Orden de Despacho de Cuadrilla
-        const dispatchForm = document.getElementById('form-create-dispatch');
-        if (dispatchForm) {
-            dispatchForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const ticketVal = document.getElementById('dsp-ticket-id').value;
-                const outageVal = document.getElementById('dsp-outage-id').value;
-                const payload = {
-                    crewId: Number(document.getElementById('dsp-crew-id').value),
-                    visitType: document.getElementById('dsp-visit-type').value,
-                    ticketId: ticketVal ? Number(ticketVal) : null,
-                    massOutageId: outageVal ? Number(outageVal) : null,
-                    fieldNotes: document.getElementById('dsp-notes').value.trim()
-                };
+        // 3. Declarar Falla Masiva Manual (Admin / NOC)
+        document.getElementById('form-declare-outage')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const napVal = document.getElementById('out-nap-id').value;
+            const payload = {
+                oltId: 1,
+                napBoxId: napVal ? Number(napVal) : null,
+                title: document.getElementById('out-title').value.trim(),
+                rootCause: document.getElementById('out-cause').value,
+                severity: document.getElementById('out-severity').value,
+                affectedContractsCount: Number(document.getElementById('out-affected').value || 3)
+            };
 
-                try {
-                    const res = await ApiClient.post('/dispatches', payload);
-                    UIUtils.showToast(res.message, 'success');
-                    dispatchForm.reset();
-                    await DashboardApp.refreshAllData();
-                } catch (err) {
-                    UIUtils.showToast(err.message, 'error');
-                }
-            });
-        }
+            try {
+                const res = await ApiClient.post('/outages', payload);
+                UIUtils.showToast(res.message, 'success');
+                e.target.reset();
+                await DashboardApp.refreshAllData();
+            } catch (err) {
+                UIUtils.showToast(err.message, 'error');
+            }
+        });
+
+        // 4. Nueva Orden de Despacho de Cuadrilla
+        document.getElementById('form-create-dispatch')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ticketVal = document.getElementById('dsp-ticket-id').value;
+            const outageVal = document.getElementById('dsp-outage-id').value;
+            const payload = {
+                crewId: Number(document.getElementById('dsp-crew-id').value),
+                visitType: document.getElementById('dsp-visit-type').value,
+                ticketId: ticketVal ? Number(ticketVal) : null,
+                massOutageId: outageVal ? Number(outageVal) : null,
+                fieldNotes: document.getElementById('dsp-notes').value.trim()
+            };
+
+            try {
+                const res = await ApiClient.post('/dispatches', payload);
+                UIUtils.showToast(res.message, 'success');
+                e.target.reset();
+                await DashboardApp.refreshAllData();
+            } catch (err) {
+                UIUtils.showToast(err.message, 'error');
+            }
+        });
     }
 
     static async refreshAllData() {
+        const isStillAuth = await DashboardApp.verifySessionStrict();
+        if (!isStillAuth) return;
+
         await Promise.all([
             DashboardApp.loadSummary(),
             DashboardApp.loadActiveOutages(),
@@ -161,29 +264,32 @@ export class DashboardApp {
             DashboardApp.loadDiagnostics(),
             DashboardApp.loadTickets(),
             DashboardApp.loadCrewsAndDispatches(),
-            DashboardApp.loadTopology()
+            DashboardApp.loadTopology(),
+            DashboardApp.loadUsersIfAdmin()
         ]);
+
+        DashboardApp.renderPolymorphicWorkspace();
+    }
+
+    static renderPolymorphicWorkspace() {
+        if (!DashboardApp.workspaceStrategy) return;
+        const kpiContainer = document.getElementById('role-kpi-grid');
+        if (kpiContainer) {
+            kpiContainer.innerHTML = DashboardApp.workspaceStrategy.renderKpis(DashboardApp.state);
+        }
+
+        const widgetContainer = document.getElementById('role-exclusive-widget');
+        if (widgetContainer) {
+            widgetContainer.innerHTML = DashboardApp.workspaceStrategy.renderRoleExclusiveWidget(DashboardApp.state);
+        }
     }
 
     static async loadSummary() {
         try {
             const res = await ApiClient.get('/dashboard/summary');
-            const s = res.data;
-            const map = {
-                'dash-kpi-contracts': s.activeContracts,
-                'dash-kpi-online': s.onusOnline,
-                'dash-kpi-attenuation': s.onusHighAttenuation,
-                'dash-kpi-los': s.onusLosCritical,
-                'dash-kpi-outages': s.activeMassOutages,
-                'dash-kpi-tickets': s.openTickets,
-                'dash-kpi-dispatches': s.activeDispatches
-            };
-            Object.entries(map).forEach(([id, val]) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = val;
-            });
+            DashboardApp.state.summary = res.data || {};
         } catch {
-            // Silencioso si no hay conexión
+            DashboardApp.state.summary = {};
         }
     }
 
@@ -193,6 +299,7 @@ export class DashboardApp {
         try {
             const res = await ApiClient.get('/outages');
             const allOutages = res.data || [];
+            DashboardApp.state.outages = allOutages;
             const active = allOutages.filter((o) => o.status !== 'resolved');
 
             if (banner) {
@@ -248,24 +355,25 @@ export class DashboardApp {
                 });
             }
         } catch {
-            // Ignorar error de carga inicial
+            DashboardApp.state.outages = [];
         }
     }
 
     static async loadContracts() {
         const role = DashboardApp.currentUser?.role || 'customer';
+        if (role === 'field_tech') return;
+
         const endpoint = role === 'customer' ? '/contracts/me' : '/contracts';
         try {
             const res = await ApiClient.get(endpoint);
-            DashboardApp.contracts = res.data || [];
+            DashboardApp.state.contracts = res.data || [];
 
-            // Poblar selectores de contrato
             ['diag-contract-id', 'tck-contract-id'].forEach((selectId) => {
                 const sel = document.getElementById(selectId);
                 if (sel) {
-                    sel.innerHTML = DashboardApp.contracts
+                    sel.innerHTML = DashboardApp.state.contracts
                         .map(
-                            (c) => `<option value="${c.id}">${c.contractNumber} — ${c.customerName || 'Mi Contrato'} (${c.napCode} P#${c.napPortNumber} · ${c.rxPowerDbm} dBm)</option>`
+                            (c) => `<option value="${Number(c.id)}">${UIUtils.escapeHtml(c.contractNumber)} — ${UIUtils.escapeHtml(c.customerName || 'Mi Contrato')} (${UIUtils.escapeHtml(c.napCode)} P#${Number(c.napPortNumber)} · ${Number(c.rxPowerDbm)} dBm)</option>`
                         )
                         .join('');
                 }
@@ -273,18 +381,18 @@ export class DashboardApp {
 
             const tbody = document.getElementById('contracts-tbody');
             if (tbody) {
-                tbody.innerHTML = DashboardApp.contracts
+                tbody.innerHTML = DashboardApp.state.contracts
                     .map(
                         (c) => `
                     <tr>
-                        <td><strong>${c.contractNumber}</strong></td>
-                        <td>${c.customerName || DashboardApp.currentUser?.fullName}</td>
-                        <td>${c.planName} (${c.downloadMbps}M)</td>
-                        <td><code>${c.napCode}</code> · Puerto ${c.napPortNumber}</td>
-                        <td><code>${c.onuSerial}</code> (${c.onuModel})</td>
+                        <td><strong>${UIUtils.escapeHtml(c.contractNumber)}</strong></td>
+                        <td>${UIUtils.escapeHtml(c.customerName || DashboardApp.currentUser?.fullName)}</td>
+                        <td>${UIUtils.escapeHtml(c.planName)} (${Number(c.downloadMbps)}M)</td>
+                        <td><code>${UIUtils.escapeHtml(c.napCode)}</code> · Puerto ${Number(c.napPortNumber)}</td>
+                        <td><code>${UIUtils.escapeHtml(c.onuSerial)}</code> (${UIUtils.escapeHtml(c.onuModel)})</td>
                         <td>${UIUtils.formatOpticalBadge(c.rxPowerDbm, c.opticalStatus)}</td>
                         <td>
-                            <button class="btn btn-primary btn-sm" data-quick-diag="${c.id}">Diagnosticar ONU</button>
+                            <button class="btn btn-primary btn-sm" data-quick-diag="${Number(c.id)}">Diagnosticar ONU</button>
                         </td>
                     </tr>`
                     )
@@ -304,7 +412,7 @@ export class DashboardApp {
                 });
             }
         } catch {
-            // Ignorar si el rol no tiene acceso
+            DashboardApp.state.contracts = [];
         }
     }
 
@@ -314,35 +422,39 @@ export class DashboardApp {
         try {
             const res = await ApiClient.get('/diagnostics');
             const list = res.data || [];
+            DashboardApp.state.diagnostics = list;
             tbody.innerHTML = list
                 .map(
                     (d) => `
                 <tr>
-                    <td>#${d.id}</td>
-                    <td><strong>${d.contractNumber || d.contractId}</strong></td>
-                    <td><code>${d.napCode || '—'}</code> (${d.onuSerial || 'ONU'})</td>
+                    <td>#${Number(d.id)}</td>
+                    <td><strong>${UIUtils.escapeHtml(d.contractNumber || d.contractId)}</strong></td>
+                    <td><code>${UIUtils.escapeHtml(d.napCode || '—')}</code> (${UIUtils.escapeHtml(d.onuSerial || 'ONU')})</td>
                     <td>${UIUtils.formatOpticalBadge(d.rxPowerDbm, d.onuStatusSnapshot)}</td>
-                    <td>${d.latencyMs} ms / ${d.packetLossPct}% loss</td>
-                    <td>${d.diagnosisSummary}</td>
-                    <td>${d.recommendedAction}</td>
+                    <td>${Number(d.latencyMs)} ms / ${Number(d.packetLossPct)}% loss</td>
+                    <td>${UIUtils.escapeHtml(d.diagnosisSummary)}</td>
+                    <td>${UIUtils.escapeHtml(d.recommendedAction)}</td>
                 </tr>`
                 )
                 .join('');
         } catch {
+            DashboardApp.state.diagnostics = [];
             tbody.innerHTML = '';
         }
     }
 
     static async loadTickets() {
+        const role = DashboardApp.currentUser?.role || 'customer';
         const tbody = document.getElementById('tickets-tbody');
         if (!tbody) return;
         try {
             const res = await ApiClient.get('/tickets');
-            if (tbody) {
-                const list = res.data || [];
-                tbody.innerHTML = list
-                    .map(
-                        (t) => `
+            const list = res.data || [];
+            DashboardApp.state.tickets = list;
+
+            tbody.innerHTML = list
+                .map(
+                    (t) => `
                 <tr>
                     <td><strong>${UIUtils.escapeHtml(t.ticketNumber)}</strong></td>
                     <td>${UIUtils.escapeHtml(t.customerName)} (<code>${UIUtils.escapeHtml(t.contractNumber)}</code>)</td>
@@ -351,11 +463,36 @@ export class DashboardApp {
                     <td><span class="badge ${t.status === 'resolved' ? 'badge-optimal' : 'badge-warning'}">${UIUtils.escapeHtml(t.status)}</span></td>
                     <td>${t.outageCode ? `<span class="badge badge-critical">${UIUtils.escapeHtml(t.outageCode)}</span>` : 'Individual'}</td>
                     <td>${UIUtils.escapeHtml(t.subject)}</td>
+                    <td>
+                        ${
+                            ['admin', 'support_agent'].includes(role) && t.status !== 'resolved'
+                                ? `<button class="btn btn-outline btn-sm" data-resolve-tck="${Number(t.id)}">Resolver N1</button>`
+                                : '—'
+                        }
+                    </td>
                 </tr>`
-                    )
-                    .join('');
-            }
+                )
+                .join('');
+
+            tbody.querySelectorAll('[data-resolve-tck]').forEach((btn) => {
+                btn.addEventListener('click', async () => {
+                    const id = Number(btn.getAttribute('data-resolve-tck'));
+                    const summary = window.prompt('Resumen de resolución remota N1/N2:', 'Ajuste remoto de parámetros ópticos/Wi-Fi verificado con el suscriptor.');
+                    if (!summary) return;
+                    try {
+                        const r = await ApiClient.put(`/tickets/${id}/status`, {
+                            status: 'resolved',
+                            resolutionSummary: summary
+                        });
+                        UIUtils.showToast(r.message, 'success');
+                        await DashboardApp.refreshAllData();
+                    } catch (err) {
+                        UIUtils.showToast(err.message, 'error');
+                    }
+                });
+            });
         } catch {
+            DashboardApp.state.tickets = [];
             tbody.innerHTML = '';
         }
     }
@@ -370,37 +507,58 @@ export class DashboardApp {
                 ApiClient.get('/dispatches')
             ]);
 
-            DashboardApp.crews = crewsRes.data || [];
+            DashboardApp.state.crews = crewsRes.data || [];
+            DashboardApp.state.dispatches = dspRes.data || [];
+
             const crewSel = document.getElementById('dsp-crew-id');
             if (crewSel) {
-                crewSel.innerHTML = DashboardApp.crews
-                    .map((c) => `<option value="${c.id}">${c.crewCode} — ${c.name} (${c.status})</option>`)
+                crewSel.innerHTML = DashboardApp.state.crews
+                    .map((c) => `<option value="${Number(c.id)}">${UIUtils.escapeHtml(c.crewCode)} — ${UIUtils.escapeHtml(c.name)} (${UIUtils.escapeHtml(c.status)})</option>`)
                     .join('');
             }
 
             const tbody = document.getElementById('dispatches-tbody');
             if (tbody) {
-                const orders = dspRes.data || [];
+                const orders = DashboardApp.state.dispatches;
                 tbody.innerHTML = orders
                     .map(
                         (d) => `
                     <tr>
-                        <td><strong>${d.dispatchCode}</strong></td>
-                        <td>${d.crewName} (<code>${d.vehiclePlate}</code>)</td>
-                        <td>${d.ticketNumber || d.outageCode || 'Planta Externa'}</td>
-                        <td><code>${d.napCode || '—'}</code> · ${d.installationAddress || ''}</td>
-                        <td><span class="badge ${d.status === 'resolved' ? 'badge-optimal' : 'badge-warning'}">${d.status}</span></td>
-                        <td>${d.restoredRxDbm !== null ? `${d.restoredRxDbm} dBm (${d.fiberDropMeters}m)` : 'Pendiente'}</td>
-                        <td>
+                        <td><strong>${UIUtils.escapeHtml(d.dispatchCode)}</strong></td>
+                        <td>${UIUtils.escapeHtml(d.crewName)} (<code>${UIUtils.escapeHtml(d.vehiclePlate)}</code>)</td>
+                        <td>${UIUtils.escapeHtml(d.ticketNumber || d.outageCode || 'Planta Externa')}</td>
+                        <td><code>${UIUtils.escapeHtml(d.napCode || '—')}</code> · ${UIUtils.escapeHtml(d.installationAddress || '')}</td>
+                        <td><span class="badge ${d.status === 'resolved' ? 'badge-optimal' : 'badge-warning'}">${UIUtils.escapeHtml(d.status)}</span></td>
+                        <td>${d.restoredRxDbm !== null ? `${Number(d.restoredRxDbm)} dBm (${Number(d.fiberDropMeters)}m)` : 'Pendiente'}</td>
+                        <td style="display:flex;gap:0.4rem;flex-wrap:wrap;">
                             ${
                                 d.status !== 'resolved' && ['admin', 'field_tech'].includes(role)
-                                    ? `<button class="btn btn-success btn-sm" data-complete-dsp="${d.id}">Certificar dBm & Cerrar</button>`
+                                    ? `
+                                    ${d.status !== 'on_site' ? `<button class="btn btn-outline btn-sm" data-arrive-dsp="${Number(d.id)}">Marcar En Sitio</button>` : ''}
+                                    <button class="btn btn-success btn-sm" data-complete-dsp="${Number(d.id)}">Certificar dBm &amp; Cerrar</button>
+                                    `
                                     : 'Cerrada'
                             }
                         </td>
                     </tr>`
                     )
                     .join('');
+
+                tbody.querySelectorAll('[data-arrive-dsp]').forEach((btn) => {
+                    btn.addEventListener('click', async () => {
+                        const id = Number(btn.getAttribute('data-arrive-dsp'));
+                        try {
+                            const r = await ApiClient.put(`/dispatches/${id}/state`, {
+                                status: 'on_site',
+                                fieldNotes: 'Cuadrilla en sitio iniciando medición con OPM en Caja NAP.'
+                            });
+                            UIUtils.showToast(r.message, 'info');
+                            await DashboardApp.refreshAllData();
+                        } catch (err) {
+                            UIUtils.showToast(err.message, 'error');
+                        }
+                    });
+                });
 
                 tbody.querySelectorAll('[data-complete-dsp]').forEach((btn) => {
                     btn.addEventListener('click', async () => {
@@ -426,31 +584,68 @@ export class DashboardApp {
                 });
             }
         } catch {
-            // Ignorar si no aplica al rol
+            DashboardApp.state.crews = [];
+            DashboardApp.state.dispatches = [];
         }
     }
 
     static async loadTopology() {
         const tbody = document.getElementById('topology-naps-tbody');
-        if (!tbody) return;
         try {
             const res = await ApiClient.get('/topology/naps');
             const naps = res.data || [];
-            tbody.innerHTML = naps
+            DashboardApp.state.naps = naps;
+
+            const outNapSel = document.getElementById('out-nap-id');
+            if (outNapSel) {
+                outNapSel.innerHTML = naps
+                    .map((n) => `<option value="${Number(n.id)}">${UIUtils.escapeHtml(n.code)} — ${UIUtils.escapeHtml(n.zoneSector)}</option>`)
+                    .join('');
+            }
+
+            if (tbody) {
+                tbody.innerHTML = naps
+                    .map(
+                        (n) => `
+                    <tr>
+                        <td><strong>${UIUtils.escapeHtml(n.code)}</strong></td>
+                        <td>${UIUtils.escapeHtml(n.oltCode)} (${UIUtils.escapeHtml(n.oltName)})</td>
+                        <td>${UIUtils.escapeHtml(n.zoneSector)} — ${UIUtils.escapeHtml(n.addressReference)}</td>
+                        <td>${UIUtils.escapeHtml(n.splitterRatio)} (${Number(n.occupiedPorts)}/${Number(n.totalPorts)})</td>
+                        <td>Online: ${Number(n.onusOnline)} · Atenuadas: ${Number(n.onusHighAttenuation)} · LOS: ${Number(n.onusLosCritical)}</td>
+                        <td><span class="badge ${n.status === 'operational' ? 'badge-optimal' : 'badge-critical'}">${UIUtils.escapeHtml(n.status)}</span></td>
+                    </tr>`
+                    )
+                    .join('');
+            }
+        } catch {
+            DashboardApp.state.naps = [];
+        }
+    }
+
+    static async loadUsersIfAdmin() {
+        if (DashboardApp.currentUser?.role !== 'admin') return;
+        const tbody = document.getElementById('users-tbody');
+        if (!tbody) return;
+        try {
+            const res = await ApiClient.get('/users');
+            const users = res.data || [];
+            DashboardApp.state.users = users;
+            tbody.innerHTML = users
                 .map(
-                    (n) => `
+                    (u) => `
                 <tr>
-                    <td><strong>${n.code}</strong></td>
-                    <td>${n.oltCode} (${n.oltName})</td>
-                    <td>${n.zoneSector} — ${n.addressReference}</td>
-                    <td>${n.splitterRatio} (${n.occupiedPorts}/${n.totalPorts})</td>
-                    <td>Online: ${n.onusOnline} · Atenuadas: ${n.onusHighAttenuation} · LOS: ${n.onusLosCritical}</td>
-                    <td><span class="badge ${n.status === 'operational' ? 'badge-optimal' : 'badge-critical'}">${n.status}</span></td>
+                    <td>#${Number(u.id)}</td>
+                    <td><strong>${UIUtils.escapeHtml(u.fullName)}</strong></td>
+                    <td><code>${UIUtils.escapeHtml(u.dpi)}</code></td>
+                    <td>${UIUtils.escapeHtml(u.email)}</td>
+                    <td><span class="badge badge-info">${UIUtils.escapeHtml(u.role)}</span></td>
+                    <td><span class="badge ${u.isActive ? 'badge-optimal' : 'badge-critical'}">${u.isActive ? 'ACTIVO' : 'INACTIVO'}</span></td>
                 </tr>`
                 )
                 .join('');
         } catch {
-            tbody.innerHTML = '';
+            DashboardApp.state.users = [];
         }
     }
 }
