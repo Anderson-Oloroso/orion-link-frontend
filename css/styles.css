@@ -5,16 +5,23 @@
    ============================================================================ */
 
 :root {
-  --bg-page: #f4f7fb;
+  --bg-page: #f5f8fc;
   --bg-surface: #ffffff;
-  --bg-elevated: #eef3f9;
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --border-color: rgba(15, 23, 42, 0.12);
-  --brand-primary: #0b2d62;
-  --brand-accent: #0284c7;
-  --brand-accent-soft: rgba(2, 132, 199, 0.12);
+  --bg-elevated: #edf3fb;
+  --text-primary: #06142e;
+  --text-secondary: #2c4163;
+  --text-muted: #5b7094;
+  --border-color: rgba(6, 20, 46, 0.12);
+  --brand-primary: #06142e;
+  --brand-wordmark-orion: #06142e;
+  --brand-wordmark-link: #0077e6;
+  --brand-divider: rgba(0, 119, 230, 0.35);
+  --brand-tile-bg: linear-gradient(145deg, #ffffff 0%, #eef5ff 100%);
+  --brand-tile-border: rgba(0, 119, 230, 0.18);
+  --brand-tile-shadow: 0 8px 20px rgba(6, 20, 46, 0.08);
+  --brand-accent: #0077e6;
+  --brand-accent-bright: #00b4ff;
+  --brand-accent-soft: rgba(0, 119, 230, 0.11);
   --optical-optimal: #16a34a;
   --optical-optimal-bg: rgba(22, 163, 74, 0.12);
   --optical-warning: #d97706;
@@ -23,22 +30,29 @@
   --optical-critical-bg: rgba(220, 38, 38, 0.14);
   --radius-sm: 6px;
   --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-lg: 16px;
   --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
   --font-mono: 'Consolas', 'Courier New', ui-monospace, monospace;
 }
 
 [data-theme="dark"] {
-  --bg-page: #090d16;
-  --bg-surface: #111827;
-  --bg-elevated: #1e293b;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
-  --border-color: rgba(148, 163, 184, 0.18);
-  --brand-primary: #38bdf8;
-  --brand-accent: #0ea5e9;
-  --brand-accent-soft: rgba(56, 189, 248, 0.15);
+  --bg-page: #01091d;
+  --bg-surface: #041230;
+  --bg-elevated: #081d47;
+  --text-primary: #ffffff;
+  --text-secondary: #c5d8f6;
+  --text-muted: #7f9bc4;
+  --border-color: rgba(0, 180, 255, 0.22);
+  --brand-primary: #21b8ff;
+  --brand-wordmark-orion: #ffffff;
+  --brand-wordmark-link: #19b5fe;
+  --brand-divider: rgba(25, 181, 254, 0.42);
+  --brand-tile-bg: linear-gradient(145deg, #041537 0%, #020b21 100%);
+  --brand-tile-border: rgba(25, 181, 254, 0.36);
+  --brand-tile-shadow: 0 8px 22px rgba(0, 180, 255, 0.16);
+  --brand-accent: #0095ff;
+  --brand-accent-bright: #29c8ff;
+  --brand-accent-soft: rgba(25, 181, 254, 0.16);
   --optical-optimal: #4ade80;
   --optical-optimal-bg: rgba(74, 222, 128, 0.14);
   --optical-warning: #fbbf24;
@@ -83,22 +97,84 @@ a {
 }
 
 .brand {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.65rem;
-  font-weight: 700;
-  font-size: 1.15rem;
+  gap: 0.75rem;
+  text-decoration: none;
   color: var(--text-primary);
 }
 
+.brand-mark-tile {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  background: var(--brand-tile-bg);
+  border: 1px solid var(--brand-tile-border);
+  box-shadow: var(--brand-tile-shadow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.brand-mark-tile img,
+.brand-mark-tile svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.brand-mark-tile.brand-mark-lg {
+  width: 78px;
+  height: 78px;
+  border-radius: 20px;
+  padding: 8px;
+}
+
+.brand-divider {
+  width: 1.5px;
+  height: 28px;
+  background: var(--brand-divider);
+  border-radius: 2px;
+}
+
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.28rem;
+  font-size: 1.32rem;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.brand-wordmark-orion {
+  font-weight: 800;
+  color: var(--brand-wordmark-orion);
+}
+
+.brand-wordmark-link {
+  font-weight: 400;
+  color: var(--brand-wordmark-link);
+}
+
 .brand-badge {
-  background: var(--brand-accent);
+  background: linear-gradient(135deg, var(--brand-accent) 0%, var(--brand-accent-bright) 100%);
   color: #ffffff;
   font-family: var(--font-mono);
-  font-size: 0.75rem;
-  padding: 0.2rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.2rem 0.48rem;
   border-radius: var(--radius-sm);
   letter-spacing: 0.05em;
+}
+
+.hero-brand-lockup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.15rem;
+  margin-bottom: 0.85rem;
 }
 
 .topbar-actions {

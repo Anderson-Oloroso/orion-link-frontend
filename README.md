@@ -1,5 +1,9 @@
 # Orion Link — Frontend (`orion-link-frontend`)
 
+<p align="center">
+  <img src="./assets/img/orion-link-brand-sheet.jpg" alt="Identidad Visual Oficial Orion Link (Modo Claro & Modo Noche NOC)" width="760">
+</p>
+
 Interfaz web desacoplada para **Orion Link**, Sistema CRM de Soporte Técnico y Operaciones ISP (FTTH), construida con **HTML5 semántico**, **CSS3 Bitema (Modo Claro / Modo Noche NOC)** y **JavaScript Vanilla modular (ES Modules 100% Orientado a Objetos)**, conectada en tiempo real con `orion-link-backend`.
 
 ---
@@ -42,8 +46,12 @@ El frontend implementa una defensa multicapa en `js/api.js`, `js/auth.js` y `js/
 
 ```text
 orion-link-frontend/
+├── assets/
+│   └── img/
+│       ├── orion-link-brand-sheet.jpg # Lámina oficial de identidad visual bitema (Claro / Noche NOC)
+│       └── orion-link-mark.svg        # Isotipo vectorial SVG (anillo orbital 3D + nodo FTTH de 4 puntas)
 ├── css/
-│   └── styles.css                  # Sistema de diseño bitema, tokens CSS y semáforo óptico dBm
+│   └── styles.css                  # Sistema de diseño bitema, tokens CSS de marca y semáforo óptico dBm
 ├── docs/
 │   └── diagrams/                   # Diagramas editoriales HTML/SVG (Arquitectura y Flujo de 4 Roles)
 ├── js/
