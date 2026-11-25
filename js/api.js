@@ -1,11 +1,13 @@
 /**
  * Cliente HTTP Orientado a Objetos para Orion Link Frontend
  * Soporta autenticación dual: Cookie HttpOnly (`credentials: 'include'`) + Authorization Bearer
+ * e incluye invalidación estricta de sesión local para evitar sesiones fantasma al pulsar "Atrás".
  */
 export class ApiClient {
     static STORAGE_URL_KEY = 'orion_link_api_base_url';
     static STORAGE_TOKEN_KEY = 'orion_link_access_token';
     static STORAGE_USER_KEY = 'orion_link_current_user';
+    static STORAGE_ACTIVE_SESSION_KEY = 'orion_link_session_active';
     static DEFAULT_BASE_URL = 'http://localhost:5000/api/v1';
 
     static getBaseUrl() {
@@ -24,21 +26,30 @@ export class ApiClient {
         return localStorage.getItem(ApiClient.STORAGE_TOKEN_KEY) || '';
     }
 
+    static hasActiveSessionFlag() {
+        return sessionStorage.getItem(ApiClient.STORAGE_ACTIVE_SESSION_KEY) === 'true' && Boolean(ApiClient.getToken());
+    }
+
     static setSession(accessToken, user) {
         if (accessToken) {
             localStorage.setItem(ApiClient.STORAGE_TOKEN_KEY, accessToken);
         }
         if (user) {
             localStorage.setItem(ApiClient.STORAGE_USER_KEY, JSON.stringify(user));
+            sessionStorage.setItem(ApiClient.STORAGE_ACTIVE_SESSION_KEY, 'true');
         }
     }
 
     static clearSession() {
         localStorage.removeItem(ApiClient.STORAGE_TOKEN_KEY);
         localStorage.removeItem(ApiClient.STORAGE_USER_KEY);
+        sessionStorage.removeItem(ApiClient.STORAGE_ACTIVE_SESSION_KEY);
     }
 
     static getStoredUser() {
+        if (!ApiClient.hasActiveSessionFlag()) {
+            return null;
+        }
         try {
             const raw = localStorage.getItem(ApiClient.STORAGE_USER_KEY);
             return raw ? JSON.parse(raw) : null;
@@ -53,6 +64,8 @@ export class ApiClient {
 
         const requestHeaders = {
             Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
             ...headers
         };
 
@@ -68,12 +81,16 @@ export class ApiClient {
             method,
             headers: requestHeaders,
             credentials: 'include',
+            cache: 'no-store',
             body: body !== null ? JSON.stringify(body) : undefined
         });
 
         const payload = await response.json().catch(() => ({}));
 
         if (!response.ok) {
+            if (response.status === 401) {
+                ApiClient.clearSession();
+            }
             const errorMessage = payload.message || `Error HTTP ${response.status}`;
             const error = new Error(errorMessage);
             error.status = response.status;
