@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none" role="img" aria-label="Orion Link Isotipo Oficial">
+  <defs>
+    <!-- Gradiente principal del anillo orbital 3D (Cobalto profundo a Cian óptico) -->
+    <linearGradient id="orionRingGrad" x1="16" y1="18" x2="104" y2="102" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00B4FF"/>
+      <stop offset="45%" stop-color="#0066E6"/>
+      <stop offset="100%" stop-color="#021B46"/>
+    </linearGradient>
+    <!-- Gradiente interior de cinta helicoidal -->
+    <linearGradient id="orionInnerRibbon" x1="96" y1="22" x2="24" y2="98" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38D8FF"/>
+      <stop offset="55%" stop-color="#0077FF"/>
+      <stop offset="100%" stop-color="#032B6B"/>
+    </linearGradient>
+    <!-- Gradiente del arco orbital de fibra óptica -->
+    <linearGradient id="orionOrbitGrad" x1="8" y1="84" x2="112" y2="34" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0055D4"/>
+      <stop offset="50%" stop-color="#00A6FF"/>
+      <stop offset="100%" stop-color="#5CE1FF"/>
+    </linearGradient>
+    <!-- Gradiente del nodo central FTTH -->
+    <linearGradient id="orionHubGrad" x1="42" y1="42" x2="78" y2="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#29C8FF"/>
+      <stop offset="100%" stop-color="#005CE6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Anillo exterior volumétrico Orion -->
+  <circle cx="60" cy="60" r="38" stroke="url(#orionRingGrad)" stroke-width="15" />
+
+  <!-- Pliegue dimensional interior (efecto Moebius del isotipo oficial) -->
+  <path d="M31 44 C38 25, 68 20, 86 36 C96 46, 97 67, 84 82 C72 95, 48 97, 34 83" stroke="url(#orionInnerRibbon)" stroke-width="7.5" stroke-linecap="round" fill="none" opacity="0.92"/>
+
+  <!-- Constelación central de 4 nodos FTTH (OLT / NAP / ONU / Cuadrilla) -->
+  <g stroke="url(#orionHubGrad)" stroke-width="3.2" stroke-linecap="round">
+    <line x1="46" y1="46" x2="74" y2="74"/>
+    <line x1="74" y1="46" x2="46" y2="74"/>
+  </g>
+  <circle cx="60" cy="60" r="7.2" fill="url(#orionHubGrad)"/>
+  <circle cx="45" cy="45" r="3.8" fill="#19B5FE"/>
+  <circle cx="75" cy="45" r="3.8" fill="#19B5FE"/>
+  <circle cx="45" cy="75" r="3.8" fill="#0066E6"/>
+  <circle cx="75" cy="75" r="3.2" fill="#38D8FF"/>
+
+  <!-- Órbita elíptica inclinada de pulso láser con destello en el ápice derecho -->
+  <path d="M16 79 C5 71, 22 49, 56 34 C89 20, 114 22, 106 36 C98 50, 69 70, 38 81 C25 85, 19 83, 16 79 Z" stroke="url(#orionOrbitGrad)" stroke-width="3.6" fill="none"/>
+  <circle cx="105" cy="29" r="3.2" fill="#76E8FF"/>
+  <circle cx="105" cy="29" r="1.6" fill="#FFFFFF"/>
+</svg>
