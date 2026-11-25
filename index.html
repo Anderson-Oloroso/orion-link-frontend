@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orion Link — Sistema CRM de Soporte Técnico y Operaciones ISP (FTTH)</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="./index.html" class="brand">
+      <span class="brand-badge">FTTH · NOC</span>
+      <span>Orion Link CRM</span>
+    </a>
+    <div class="topbar-actions">
+      <button type="button" class="api-status-pill" data-api-indicator title="Haz clic para cambiar la URL del backend">
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>Verificando API...</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <a href="./pages/auth.html" class="btn btn-primary btn-sm">Acceder al Portal / NOC</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div>
+        <p class="hero-eyebrow">Orion Link · Telecom ISP CRM</p>
+        <h1>Centralización de Soporte Técnico, Diagnóstico Óptico Remoto y Despacho de Cuadrillas FTTH</h1>
+        <p>
+          Orion Link conecta en tiempo real a los 4 actores críticos de un proveedor de internet por fibra óptica
+          (<strong>Admin/NOC</strong>, <strong>Agente de Soporte</strong>, <strong>Técnico de Cuadrilla</strong> y
+          <strong>Cliente Suscriptor</strong>) sobre una arquitectura desacoplada con telemetría en <code>dBm</code>
+          y detección temprana de fallas masivas por Caja NAP.
+        </p>
+        <div style="margin-top: 1.25rem; display: flex; flex-wrap: wrap; gap: 0.75rem;">
+          <a href="./pages/auth.html" class="btn btn-primary">Iniciar Sesión Multi-Rol</a>
+          <a href="./docs/diagrams/orion-link-architecture.html" class="btn btn-outline">Ver Diagrama de Arquitectura</a>
+          <a href="./docs/diagrams/orion-link-role-flow.html" class="btn btn-outline">Ver Flujo de 4 Roles</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="kpi-grid" aria-label="Métricas de Red en Tiempo Real">
+      <article class="kpi-card">
+        <p class="kpi-label">Contratos FTTH Activos</p>
+        <p class="kpi-value" id="kpi-active-contracts">6</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">ONUs en Señal Óptima</p>
+        <p class="kpi-value" id="kpi-onus-online" style="color: var(--optical-optimal);">2</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Fallas Masivas Activas</p>
+        <p class="kpi-value" id="kpi-mass-outages" style="color: var(--optical-critical);">1</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Cuadrillas Disponibles</p>
+        <p class="kpi-value" id="kpi-available-crews">1</p>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Monitor Público de Cajas NAP de Distribución Óptica</h2>
+        <span class="badge badge-info">Telemetría GPON en Vivo</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código NAP</th>
+              <th>Sector / Zona</th>
+              <th>Splitter &amp; Capacidad</th>
+              <th>Potencia Rx Promedio</th>
+              <th>Estado Operativo</th>
+            </tr>
+          </thead>
+          <tbody id="landing-naps-tbody">
+            <tr><td colspan="5">Cargando telemetría de Cajas NAP...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Planes Simétricos de Fibra Óptica FTTH</h2>
+        <span class="badge badge-optimal">SLA Garantizado</span>
+      </div>
+      <div class="kpi-grid" id="landing-plans-grid"></div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/landing.js"></script>
+</body>
+</html>
