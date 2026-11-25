@@ -3,17 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Orion Link — Consola Operativa NOC, Soporte, Cuadrillas y Portal Cliente</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Orion Link — Consola Operativa Multi-Rol (NOC, Soporte, Cuadrillas y Portal Cliente)</title>
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
   <header class="topbar">
     <a href="../index.html" class="brand">
-      <span class="brand-badge">ORION NOC</span>
-      <span>Consola Operativa FTTH</span>
+      <span class="brand-badge">ORION LINK</span>
+      <span>Sistema Operativo FTTH</span>
     </a>
     <div class="topbar-actions">
-      <span class="badge badge-info" id="current-user-display">Cargando sesión...</span>
+      <span class="badge badge-info" id="current-user-display">Verificando sesión...</span>
       <button type="button" class="api-status-pill" data-api-indicator>
         <span class="status-dot" data-api-dot></span>
         <span data-api-text>API</span>
@@ -25,68 +28,50 @@
   </header>
 
   <main class="container">
+    <!-- Encabezado Dinámico Polimórfico según el Rol Autenticado -->
+    <section class="card" style="margin-bottom: 1.25rem;">
+      <span class="badge badge-info" id="role-workspace-badge">CARGANDO ROL</span>
+      <h1 id="role-workspace-title" style="font-size: 1.45rem; margin: 0.45rem 0 0.25rem;">Consola Operativa Orion Link</h1>
+      <p id="role-workspace-subtitle" style="font-size: 0.9rem; color: var(--text-secondary);"></p>
+    </section>
+
     <!-- Banner de Alerta Temprana de Falla Masiva FTTH -->
     <div id="active-outage-banner" class="outage-alert-banner hidden"></div>
 
-    <!-- KPIs Operativos -->
-    <section class="kpi-grid">
-      <article class="kpi-card">
-        <p class="kpi-label">Contratos Activos</p>
-        <p class="kpi-value" id="dash-kpi-contracts">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">ONUs Óptimas</p>
-        <p class="kpi-value" id="dash-kpi-online" style="color: var(--optical-optimal);">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">ONUs Atenuadas</p>
-        <p class="kpi-value" id="dash-kpi-attenuation" style="color: var(--optical-warning);">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">ONUs en Corte (LOS)</p>
-        <p class="kpi-value" id="dash-kpi-los" style="color: var(--optical-critical);">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">Fallas Masivas</p>
-        <p class="kpi-value" id="dash-kpi-outages" style="color: var(--optical-critical);">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">Tickets Abiertos</p>
-        <p class="kpi-value" id="dash-kpi-tickets">0</p>
-      </article>
-      <article class="kpi-card">
-        <p class="kpi-label">Despachos Activos</p>
-        <p class="kpi-value" id="dash-kpi-dispatches">0</p>
-      </article>
-    </section>
+    <!-- Widget Exclusivo Polimórfico por Rol -->
+    <section id="role-exclusive-widget"></section>
 
-    <!-- Navegación por Pestañas adaptada por Rol -->
+    <!-- KPIs Polimórficos Específicos para cada uno de los 4 Roles -->
+    <section class="kpi-grid" id="role-kpi-grid"></section>
+
+    <!-- Navegación por Pestañas Filtrada Estrictamente por Rol -->
     <nav class="tabs" aria-label="Módulos del Sistema">
-      <button type="button" class="tab-btn active" data-tab="panel-contracts">1. Contratos &amp; Diagnóstico Remoto</button>
-      <button type="button" class="tab-btn" data-tab="panel-tickets">2. Tickets de Soporte &amp; SLA</button>
-      <button type="button" class="tab-btn" data-tab="panel-outages">3. Detección de Fallas Masivas FTTH</button>
-      <button type="button" class="tab-btn" data-tab="panel-dispatches" data-roles="admin,support_agent,field_tech">4. Despacho de Cuadrillas en Campo</button>
-      <button type="button" class="tab-btn" data-tab="panel-topology" data-roles="admin,support_agent,field_tech">5. Topología OLT / Cajas NAP</button>
+      <button type="button" class="tab-btn" data-tab="panel-topology">Topología OLT &amp; Cajas NAP</button>
+      <button type="button" class="tab-btn" data-tab="panel-outages">Fallas Masivas FTTH</button>
+      <button type="button" class="tab-btn" data-tab="panel-contracts">Contratos &amp; Diagnóstico Óptico</button>
+      <button type="button" class="tab-btn" data-tab="panel-tickets">Tickets de Soporte &amp; SLA</button>
+      <button type="button" class="tab-btn" data-tab="panel-dispatches">Órdenes de Cuadrilla en Campo</button>
+      <button type="button" class="tab-btn" data-tab="panel-users">Auditoría RBAC de Usuarios</button>
     </nav>
 
-    <!-- PANEL 1: CONTRATOS Y DIAGNÓSTICO ÓPTICO REMOTO -->
-    <section id="panel-contracts" class="tab-panel active">
+    <!-- PANEL 1: CONTRATOS Y DIAGNÓSTICO ÓPTICO REMOTO (Admin, Soporte, Cliente) -->
+    <section id="panel-contracts" class="tab-panel">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Simulador y Ejecutor de Diagnóstico Óptico Remoto (sp_run_remote_diagnostic)</h2>
-          <span class="badge badge-info">Correlación Automática NAP</span>
+          <h2 class="card-title">Diagnóstico Óptico Remoto de Conectividad (sp_run_remote_diagnostic)</h2>
+          <span class="badge badge-info">Telemetría GPON en Vivo</span>
         </div>
         <form id="form-run-diagnostic" class="form-grid" style="align-items: end;">
           <div>
-            <label for="diag-contract-id">Contrato / ONU a Diagnosticar</label>
+            <label for="diag-contract-id">Contrato / Equipo Terminal ONU</label>
             <select id="diag-contract-id" required></select>
           </div>
-          <div>
-            <label for="diag-simulated-rx">Lectura Rx Opcional (dBm · ej. -19.2, -26.8 o -40.0 LOS)</label>
-            <input type="number" step="0.05" min="-45" max="-10" id="diag-simulated-rx" placeholder="Dejar vacío para lectura actual">
+          <div data-roles="admin,support_agent">
+            <label for="diag-simulated-rx">Inyección Rx de Prueba (dBm · ej. -19.2, -26.8 o -40.0 LOS)</label>
+            <input type="number" step="0.05" min="-45" max="-10" id="diag-simulated-rx" placeholder="Vacío = medir potencia actual">
           </div>
           <div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Ejecutar Telemetría Remota</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Ejecutar Diagnóstico Óptico</button>
           </div>
         </form>
       </div>
@@ -115,7 +100,7 @@
 
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Bitácora Reciente de Diagnósticos Remotos</h2>
+          <h2 class="card-title">Bitácora de Diagnósticos Remotos</h2>
         </div>
         <div class="table-wrap">
           <table>
@@ -136,7 +121,7 @@
       </div>
     </section>
 
-    <!-- PANEL 2: TICKETS DE SOPORTE -->
+    <!-- PANEL 2: TICKETS DE SOPORTE (Admin, Soporte, Cliente) -->
     <section id="panel-tickets" class="tab-panel">
       <div class="card">
         <div class="card-header">
@@ -158,8 +143,8 @@
                 <option value="onu_power">Falla de Energía en ONU</option>
               </select>
             </div>
-            <div>
-              <label for="tck-priority">Prioridad</label>
+            <div data-roles="admin,support_agent">
+              <label for="tck-priority">Prioridad SLA</label>
               <select id="tck-priority">
                 <option value="medium">Media</option>
                 <option value="high">Alta</option>
@@ -173,11 +158,11 @@
             <input type="text" id="tck-subject" required minlength="5" placeholder="Ej. Luz roja LOS parpadeando en ONU tras tormenta">
           </div>
           <div>
-            <label for="tck-description">Descripción Técnica Detallada</label>
+            <label for="tck-description">Descripción Detallada</label>
             <textarea id="tck-description" rows="2" required minlength="10" placeholder="Describa los síntomas o resultados de la telemetría..."></textarea>
           </div>
           <div>
-            <button type="submit" class="btn btn-primary">Crear Ticket (Vinculación Automática a Falla Masiva si aplica)</button>
+            <button type="submit" class="btn btn-primary">Registrar Ticket de Soporte</button>
           </div>
         </form>
       </div>
@@ -197,6 +182,7 @@
                 <th>Estado</th>
                 <th>Falla Masiva</th>
                 <th>Asunto</th>
+                <th>Resolución Rápida</th>
               </tr>
             </thead>
             <tbody id="tickets-tbody"></tbody>
@@ -205,8 +191,47 @@
       </div>
     </section>
 
-    <!-- PANEL 3: FALLAS MASIVAS FTTH -->
+    <!-- PANEL 3: FALLAS MASIVAS FTTH (Admin, Soporte) -->
     <section id="panel-outages" class="tab-panel">
+      <div class="card" data-roles="admin">
+        <div class="card-header">
+          <h2 class="card-title">Declarar Falla Masiva de Planta Externa (Exclusivo Admin / NOC)</h2>
+        </div>
+        <form id="form-declare-outage" class="form-grid" style="align-items: end;">
+          <div>
+            <label for="out-nap-id">Caja NAP Afectada</label>
+            <select id="out-nap-id" required></select>
+          </div>
+          <div>
+            <label for="out-cause">Causa Raíz</label>
+            <select id="out-cause">
+              <option value="fiber_cut">Corte de Fibra Exterior</option>
+              <option value="splitter_damage">Daño en Splitter Óptico</option>
+              <option value="olt_pon_card">Avería en Tarjeta PON OLT</option>
+              <option value="vandalism">Vandalismo en Poste</option>
+            </select>
+          </div>
+          <div>
+            <label for="out-severity">Severidad</label>
+            <select id="out-severity">
+              <option value="critical">Crítica</option>
+              <option value="major">Mayor</option>
+            </select>
+          </div>
+          <div>
+            <label for="out-affected">Contratos Afectados</label>
+            <input type="number" id="out-affected" min="1" value="3">
+          </div>
+          <div>
+            <label for="out-title">Título del Incidente Masivo</label>
+            <input type="text" id="out-title" required placeholder="Corte de distribución en poste principal">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-danger" style="width: 100%;">Declarar Falla Masiva</button>
+          </div>
+        </form>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h2 class="card-title">Monitor de Fallas Masivas en Red de Fibra Óptica (mass_outages)</h2>
@@ -229,11 +254,11 @@
       </div>
     </section>
 
-    <!-- PANEL 4: DESPACHO DE CUADRILLAS EN CAMPO -->
+    <!-- PANEL 4: DESPACHO DE CUADRILLAS EN CAMPO (Admin, Soporte, Técnico de Cuadrilla) -->
     <section id="panel-dispatches" class="tab-panel">
       <div class="card" data-roles="admin,support_agent">
         <div class="card-header">
-          <h2 class="card-title">Despachar Cuadrilla Técnica a Campo</h2>
+          <h2 class="card-title">Asignar y Despachar Cuadrilla Técnica a Campo</h2>
         </div>
         <form id="form-create-dispatch" class="form-grid" style="align-items: end;">
           <div>
@@ -262,14 +287,14 @@
             <input type="text" id="dsp-notes" placeholder="Revisar puerto NAP y certificar potencia">
           </div>
           <div>
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Asignar Orden</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Despachar Cuadrilla</button>
           </div>
         </form>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Órdenes de Despacho y Certificación Óptica en Campo (sp_complete_dispatch_order)</h2>
+          <h2 class="card-title">Órdenes de Trabajo en Campo y Certificación Óptica (sp_complete_dispatch_order)</h2>
         </div>
         <div class="table-wrap">
           <table>
@@ -281,7 +306,7 @@
                 <th>Ubicación / Caja NAP</th>
                 <th>Estado</th>
                 <th>Potencia Restaurada</th>
-                <th>Cierre Certificado</th>
+                <th>Acciones de Campo</th>
               </tr>
             </thead>
             <tbody id="dispatches-tbody"></tbody>
@@ -290,11 +315,11 @@
       </div>
     </section>
 
-    <!-- PANEL 5: TOPOLOGÍA FTTH -->
+    <!-- PANEL 5: TOPOLOGÍA FTTH (Admin, Técnico de Cuadrilla) -->
     <section id="panel-topology" class="tab-panel">
       <div class="card">
         <div class="card-header">
-          <h2 class="card-title">Estado de Cajas NAP y Correlación de Puertos Splitter</h2>
+          <h2 class="card-title">Topología de Planta Externa: Nodos OLT, Cajas NAP y Puertos Splitter</h2>
         </div>
         <div class="table-wrap">
           <table>
@@ -309,6 +334,30 @@
               </tr>
             </thead>
             <tbody id="topology-naps-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 6: AUDITORÍA DE USUARIOS Y ROLES RBAC (Exclusivo Admin / NOC) -->
+    <section id="panel-users" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Directorio y Auditoría RBAC de Usuarios del Sistema (Exclusivo Admin)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nombre Completo</th>
+                <th>DPI</th>
+                <th>Correo Electrónico</th>
+                <th>Rol RBAC</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="users-tbody"></tbody>
           </table>
         </div>
       </div>
