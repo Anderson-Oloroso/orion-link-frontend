@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orion Link — Consola Operativa NOC, Soporte, Cuadrillas y Portal Cliente</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="../index.html" class="brand">
+      <span class="brand-badge">ORION NOC</span>
+      <span>Consola Operativa FTTH</span>
+    </a>
+    <div class="topbar-actions">
+      <span class="badge badge-info" id="current-user-display">Cargando sesión...</span>
+      <button type="button" class="api-status-pill" data-api-indicator>
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>API</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-dashboard">Sincronizar</button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Banner de Alerta Temprana de Falla Masiva FTTH -->
+    <div id="active-outage-banner" class="outage-alert-banner hidden"></div>
+
+    <!-- KPIs Operativos -->
+    <section class="kpi-grid">
+      <article class="kpi-card">
+        <p class="kpi-label">Contratos Activos</p>
+        <p class="kpi-value" id="dash-kpi-contracts">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">ONUs Óptimas</p>
+        <p class="kpi-value" id="dash-kpi-online" style="color: var(--optical-optimal);">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">ONUs Atenuadas</p>
+        <p class="kpi-value" id="dash-kpi-attenuation" style="color: var(--optical-warning);">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">ONUs en Corte (LOS)</p>
+        <p class="kpi-value" id="dash-kpi-los" style="color: var(--optical-critical);">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Fallas Masivas</p>
+        <p class="kpi-value" id="dash-kpi-outages" style="color: var(--optical-critical);">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Tickets Abiertos</p>
+        <p class="kpi-value" id="dash-kpi-tickets">0</p>
+      </article>
+      <article class="kpi-card">
+        <p class="kpi-label">Despachos Activos</p>
+        <p class="kpi-value" id="dash-kpi-dispatches">0</p>
+      </article>
+    </section>
+
+    <!-- Navegación por Pestañas adaptada por Rol -->
+    <nav class="tabs" aria-label="Módulos del Sistema">
+      <button type="button" class="tab-btn active" data-tab="panel-contracts">1. Contratos &amp; Diagnóstico Remoto</button>
+      <button type="button" class="tab-btn" data-tab="panel-tickets">2. Tickets de Soporte &amp; SLA</button>
+      <button type="button" class="tab-btn" data-tab="panel-outages">3. Detección de Fallas Masivas FTTH</button>
+      <button type="button" class="tab-btn" data-tab="panel-dispatches" data-roles="admin,support_agent,field_tech">4. Despacho de Cuadrillas en Campo</button>
+      <button type="button" class="tab-btn" data-tab="panel-topology" data-roles="admin,support_agent,field_tech">5. Topología OLT / Cajas NAP</button>
+    </nav>
+
+    <!-- PANEL 1: CONTRATOS Y DIAGNÓSTICO ÓPTICO REMOTO -->
+    <section id="panel-contracts" class="tab-panel active">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Simulador y Ejecutor de Diagnóstico Óptico Remoto (sp_run_remote_diagnostic)</h2>
+          <span class="badge badge-info">Correlación Automática NAP</span>
+        </div>
+        <form id="form-run-diagnostic" class="form-grid" style="align-items: end;">
+          <div>
+            <label for="diag-contract-id">Contrato / ONU a Diagnosticar</label>
+            <select id="diag-contract-id" required></select>
+          </div>
+          <div>
+            <label for="diag-simulated-rx">Lectura Rx Opcional (dBm · ej. -19.2, -26.8 o -40.0 LOS)</label>
+            <input type="number" step="0.05" min="-45" max="-10" id="diag-simulated-rx" placeholder="Dejar vacío para lectura actual">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Ejecutar Telemetría Remota</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Contratos FTTH y Estado de Terminales Ópticas (ONUs)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>No. Contrato</th>
+                <th>Suscriptor</th>
+                <th>Plan Fibra</th>
+                <th>Caja NAP &amp; Puerto</th>
+                <th>Serie &amp; Modelo ONU</th>
+                <th>Potencia Rx (dBm)</th>
+                <th>Acción Rápida</th>
+              </tr>
+            </thead>
+            <tbody id="contracts-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Bitácora Reciente de Diagnósticos Remotos</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Contrato</th>
+                <th>NAP / ONU</th>
+                <th>Potencia Rx</th>
+                <th>Latencia / Pérdida</th>
+                <th>Diagnóstico</th>
+                <th>Acción Recomendada</th>
+              </tr>
+            </thead>
+            <tbody id="diagnostics-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 2: TICKETS DE SOPORTE -->
+    <section id="panel-tickets" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Abrir Nuevo Ticket de Soporte Técnico</h2>
+        </div>
+        <form id="form-create-ticket" style="display: grid; gap: 0.85rem;">
+          <div class="form-grid">
+            <div>
+              <label for="tck-contract-id">Contrato Afectado</label>
+              <select id="tck-contract-id" required></select>
+            </div>
+            <div>
+              <label for="tck-category">Categoría Técnica</label>
+              <select id="tck-category" required>
+                <option value="no_connection_los">Sin Conexión / Luz Roja LOS</option>
+                <option value="high_attenuation">Atenuación Óptica Alta (-25 a -27.9 dBm)</option>
+                <option value="slow_speed">Lentitud / Intermitencia</option>
+                <option value="wifi_router">Configuración Wi-Fi / Router</option>
+                <option value="onu_power">Falla de Energía en ONU</option>
+              </select>
+            </div>
+            <div>
+              <label for="tck-priority">Prioridad</label>
+              <select id="tck-priority">
+                <option value="medium">Media</option>
+                <option value="high">Alta</option>
+                <option value="critical">Crítica</option>
+                <option value="low">Baja</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label for="tck-subject">Asunto del Incidente</label>
+            <input type="text" id="tck-subject" required minlength="5" placeholder="Ej. Luz roja LOS parpadeando en ONU tras tormenta">
+          </div>
+          <div>
+            <label for="tck-description">Descripción Técnica Detallada</label>
+            <textarea id="tck-description" rows="2" required minlength="10" placeholder="Describa los síntomas o resultados de la telemetría..."></textarea>
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary">Crear Ticket (Vinculación Automática a Falla Masiva si aplica)</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Bandeja de Tickets de Soporte</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Suscriptor &amp; Contrato</th>
+                <th>Categoría</th>
+                <th>Prioridad</th>
+                <th>Estado</th>
+                <th>Falla Masiva</th>
+                <th>Asunto</th>
+              </tr>
+            </thead>
+            <tbody id="tickets-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 3: FALLAS MASIVAS FTTH -->
+    <section id="panel-outages" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Monitor de Fallas Masivas en Red de Fibra Óptica (mass_outages)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Caja NAP / OLT</th>
+                <th>Título del Incidente</th>
+                <th>Contratos Afectados</th>
+                <th>Estado</th>
+                <th>Resolución NOC</th>
+              </tr>
+            </thead>
+            <tbody id="outages-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 4: DESPACHO DE CUADRILLAS EN CAMPO -->
+    <section id="panel-dispatches" class="tab-panel">
+      <div class="card" data-roles="admin,support_agent">
+        <div class="card-header">
+          <h2 class="card-title">Despachar Cuadrilla Técnica a Campo</h2>
+        </div>
+        <form id="form-create-dispatch" class="form-grid" style="align-items: end;">
+          <div>
+            <label for="dsp-crew-id">Cuadrilla Asignada</label>
+            <select id="dsp-crew-id" required></select>
+          </div>
+          <div>
+            <label for="dsp-visit-type">Tipo de Intervención</label>
+            <select id="dsp-visit-type">
+              <option value="last_mile_repair">Reparación Última Milla / Drop</option>
+              <option value="nap_splitter_repair">Empalme Caja NAP / Splitter</option>
+              <option value="backbone_fusion">Fusión Fibra Troncal</option>
+              <option value="onu_replacement">Reemplazo de Equipo ONU</option>
+            </select>
+          </div>
+          <div>
+            <label for="dsp-ticket-id">ID Ticket (Opcional)</label>
+            <input type="number" id="dsp-ticket-id" min="1" placeholder="Ej. 1">
+          </div>
+          <div>
+            <label for="dsp-outage-id">ID Falla Masiva (Opcional)</label>
+            <input type="number" id="dsp-outage-id" min="1" placeholder="Ej. 2">
+          </div>
+          <div>
+            <label for="dsp-notes">Instrucciones de Campo</label>
+            <input type="text" id="dsp-notes" placeholder="Revisar puerto NAP y certificar potencia">
+          </div>
+          <div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">Asignar Orden</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Órdenes de Despacho y Certificación Óptica en Campo (sp_complete_dispatch_order)</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Orden</th>
+                <th>Cuadrilla &amp; Unidad</th>
+                <th>Ticket / Falla Masiva</th>
+                <th>Ubicación / Caja NAP</th>
+                <th>Estado</th>
+                <th>Potencia Restaurada</th>
+                <th>Cierre Certificado</th>
+              </tr>
+            </thead>
+            <tbody id="dispatches-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL 5: TOPOLOGÍA FTTH -->
+    <section id="panel-topology" class="tab-panel">
+      <div class="card">
+        <div class="card-header">
+          <h2 class="card-title">Estado de Cajas NAP y Correlación de Puertos Splitter</h2>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Caja NAP</th>
+                <th>Nodo OLT Padre</th>
+                <th>Ubicación Geográfica</th>
+                <th>Ocupación Splitter</th>
+                <th>Distribución de Salud ONU</th>
+                <th>Estado NAP</th>
+              </tr>
+            </thead>
+            <tbody id="topology-naps-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>
