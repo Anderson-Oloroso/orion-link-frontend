@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orion Link · Multi-Role Frontend &amp; Backend Operational Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #bf4520;
+      --font-sans:     'Geist', system-ui, sans-serif;
+      --font-serif:    'Instrument Serif', serif;
+      --font-mono:     'Geist Mono', ui-monospace, monospace;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 2rem;
+    }
+
+    .frame { max-width: 1200px; width: 100%; }
+    .diagram-container { width: 100%; overflow-x: auto; }
+
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      color: var(--color-ink);
+      margin-bottom: 1.5rem;
+    }
+
+    svg { width: 100%; min-width: 728px; display: block; }
+    @media print {
+      .diagram-container { overflow-x: visible; }
+      svg { min-width: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Data flow · Diagram Design</p>
+    <h1>Orion Link · 4-Role FTTH Diagnostic, Mass Outage &amp; Crew Dispatch Flow</h1>
+
+    <div class="diagram-container">
+      <svg viewBox="0 0 728 436" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="orion-flow-title orion-flow-desc">
+        <title id="orion-flow-title">Orion Link · 4-Role FTTH Diagnostic, Mass Outage and Crew Dispatch Flow</title>
+        <desc id="orion-flow-desc">Role-scoped data flow across Customer, Support Agent, Admin NOC, and Field Tech showing how an optical signal drop is diagnosed, correlated into a mass outage, dispatched to a field crew, and resolved with certified dBm power.</desc>
+        <defs>
+          <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+            <circle cx="11" cy="11" r="0.8" fill="rgba(45,49,66,0.10)"/>
+          </pattern>
+          <marker id="arr-muted" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#4f5d75"/></marker>
+          <marker id="arr-accent" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#bf4520"/></marker>
+          <marker id="arr-link" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#2e5aa8"/></marker>
+        </defs>
+
+        <!-- Background & alternating lane tints -->
+        <rect width="100%" height="100%" fill="#f5f5f5"/>
+        <rect width="100%" height="100%" fill="url(#dots)"/>
+        <rect x="0" y="36" width="728" height="80" fill="rgba(45,49,66,0.018)"/>
+        <rect x="0" y="196" width="728" height="80" fill="rgba(45,49,66,0.018)"/>
+
+        <!-- Dividers -->
+        <line x1="0" y1="36" x2="728" y2="36" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="116" x2="728" y2="116" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="196" x2="728" y2="196" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="276" x2="728" y2="276" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="0" y1="356" x2="728" y2="356" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+        <line x1="140" y1="36" x2="140" y2="356" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+
+        <!-- Step Header Chips -->
+        <!-- Step 01: REPORT (cx=196) -->
+        <rect x="180" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="196" y="17" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">01</text>
+        <text x="196" y="29" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">REPORT</text>
+
+        <!-- Step 02: DIAGNOSE (cx=308) -->
+        <rect x="292" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="308" y="17" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">02</text>
+        <text x="308" y="29" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DIAGNOSE</text>
+
+        <!-- Step 03: CORRELATE (cx=420) -->
+        <rect x="404" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="420" y="17" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">03</text>
+        <text x="420" y="29" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">CORRELATE</text>
+
+        <!-- Step 04: DISPATCH (focal, cx=532) -->
+        <rect x="516" y="6" width="32" height="16" rx="8" fill="rgba(191,69,32,0.20)"/>
+        <text x="532" y="17" fill="#bf4520" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">04</text>
+        <text x="532" y="29" fill="#bf4520" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">DISPATCH</text>
+
+        <!-- Step 05: RESOLVE (cx=644) -->
+        <rect x="628" y="6" width="32" height="16" rx="8" fill="rgba(45,49,66,0.12)"/>
+        <text x="644" y="17" fill="#2d3142" font-size="8" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">05</text>
+        <text x="644" y="29" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.14em">RESOLVE</text>
+
+        <!-- Lane Labels (x=70) -->
+        <text x="70" y="72" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">CUSTOMER</text>
+        <text x="70" y="84" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">PORTAL</text>
+
+        <text x="70" y="152" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">SUPPORT</text>
+        <text x="70" y="164" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">AGENT N1</text>
+
+        <text x="70" y="232" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">ADMIN</text>
+        <text x="70" y="244" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">NOC CORE</text>
+
+        <text x="70" y="312" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">FIELD</text>
+        <text x="70" y="324" fill="#4f5d75" font-size="8" font-weight="500" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.18em">TECH CREW</text>
+
+        <!-- Arrows first (drawn before node boxes) -->
+        <!-- 1. Customer Step 0 -> Customer Step 1 -->
+        <line x1="246" y1="76" x2="258" y2="76" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <!-- 2. Customer Step 0 -> Support Step 0 (trigger) -->
+        <line x1="196" y1="108" x2="196" y2="124" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-muted)"/>
+        <!-- 3. Customer Step 1 -> Support Step 1 (trigger) -->
+        <line x1="308" y1="108" x2="308" y2="124" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-muted)"/>
+        <!-- 4. Support Step 0 -> Support Step 1 -->
+        <line x1="246" y1="156" x2="258" y2="156" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <!-- 5. Support Step 1 -> Support Step 2 -->
+        <line x1="358" y1="156" x2="370" y2="156" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <!-- 6. Support Step 2 -> Admin NOC Step 2 -->
+        <line x1="420" y1="188" x2="420" y2="204" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <!-- 7. Focal cross-role handoff: Admin NOC Step 2 -> Field Tech Step 3 (accent) -->
+        <path d="M 470,236 H 524 Q 532,236 532,244 V 284" fill="none" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arr-accent)"/>
+        <!-- 8. Field Tech Step 3 -> Field Tech Step 4 -->
+        <line x1="582" y1="316" x2="594" y2="316" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <!-- 9. Field Tech Step 4 -> Customer Step 4 (link: service restored notification) -->
+        <line x1="644" y1="284" x2="644" y2="108" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arr-link)"/>
+
+        <!-- Focal Arrow Label (masked, 6px gap from vertical segment at x=532) -->
+        <rect x="540" y="254" width="60" height="12" rx="2" fill="#f5f5f5"/>
+        <text x="570" y="263" fill="#bf4520" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">NAP ORDER</text>
+
+        <!-- NODES (100x64 each) -->
+        <!-- Node 1: CUS Step 0 (x=146, y=44) -->
+        <rect x="146" y="44" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="150" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="159" y="55" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">CUS</text>
+        <text x="196" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Self-Check</text>
+        <text x="196" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">contract · ONU</text>
+        <text x="196" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">dashboard.html</text>
+        <rect x="150" y="98" width="16" height="8" rx="3" fill="#6e6479"/>
+        <text x="158" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">WB</text>
+        <rect x="226" y="98" width="16" height="8" rx="3" fill="#4a7c59"/>
+        <text x="234" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">LS</text>
+
+        <!-- Node 2: CUS Step 1 (x=258, y=44) -->
+        <rect x="258" y="44" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="262" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="271" y="55" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">CUS</text>
+        <text x="308" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Report Ticket</text>
+        <text x="308" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">LOS · slow speed</text>
+        <text x="308" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">POST /tickets</text>
+        <rect x="262" y="98" width="16" height="8" rx="3" fill="#4a7c59"/>
+        <text x="270" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">LS</text>
+        <rect x="338" y="98" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="346" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+
+        <!-- Node 3: SUP Step 0 (x=146, y=124) -->
+        <rect x="146" y="124" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="150" y="128" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="159" y="135" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">SUP</text>
+        <text x="196" y="147" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Lookup Client</text>
+        <text x="196" y="159" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">DPI · ONU serial</text>
+        <text x="196" y="171" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">GET /contracts</text>
+        <rect x="150" y="178" width="16" height="8" rx="3" fill="#6e6479"/>
+        <text x="158" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">WB</text>
+        <rect x="226" y="178" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="234" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+
+        <!-- Node 4: SUP Step 1 (x=258, y=124) -->
+        <rect x="258" y="124" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="262" y="128" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="271" y="135" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">SUP</text>
+        <text x="308" y="147" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Optical Test</text>
+        <text x="308" y="159" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Rx/Tx dBm · ping</text>
+        <text x="308" y="171" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">POST /diagnostics</text>
+        <rect x="262" y="178" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="270" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+        <rect x="338" y="178" width="16" height="8" rx="3" fill="#5e7a9b"/>
+        <text x="346" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+
+        <!-- Node 5: SUP Step 2 (x=370, y=124) -->
+        <rect x="370" y="124" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="374" y="128" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="383" y="135" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">SUP</text>
+        <text x="420" y="147" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Triage &amp; Link</text>
+        <text x="420" y="159" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">group by NAP box</text>
+        <text x="420" y="171" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">sp_run_diagnostic</text>
+        <rect x="374" y="178" width="16" height="8" rx="3" fill="#5e7a9b"/>
+        <text x="382" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <rect x="450" y="178" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="458" y="184" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+
+        <!-- Node 6: NOC Step 2 (x=370, y=204) -->
+        <rect x="370" y="204" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="374" y="208" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="383" y="215" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">NOC</text>
+        <text x="420" y="227" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Mass Outage</text>
+        <text x="420" y="239" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">>=3 LOS in NAP</text>
+        <text x="420" y="251" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">mass_outages</text>
+        <rect x="374" y="258" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="382" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+        <rect x="450" y="258" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="458" y="264" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+
+        <!-- Node 7: TEC Step 3 (FOCAL NODE, x=482, y=284) -->
+        <rect x="482" y="284" width="100" height="64" rx="6" fill="rgba(191,69,32,0.07)" stroke="#bf4520" stroke-width="1.2"/>
+        <rect x="486" y="288" width="18" height="10" rx="3" fill="rgba(191,69,32,0.20)"/>
+        <text x="495" y="295" fill="#bf4520" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">TEC</text>
+        <text x="532" y="307" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Crew Dispatch</text>
+        <text x="532" y="319" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">splice · NAP port</text>
+        <text x="532" y="331" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">POST /dispatches</text>
+        <rect x="486" y="338" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="494" y="344" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <rect x="562" y="338" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="570" y="344" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+
+        <!-- Node 8: TEC Step 4 (x=594, y=284) -->
+        <rect x="594" y="284" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="598" y="288" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="607" y="295" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">TEC</text>
+        <text x="644" y="307" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Certify -19dBm</text>
+        <text x="644" y="319" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">close · ACID sync</text>
+        <text x="644" y="331" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">sp_complete_order</text>
+        <rect x="598" y="338" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="606" y="344" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+        <rect x="674" y="338" width="16" height="8" rx="3" fill="#4a7c59"/>
+        <text x="682" y="344" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">LS</text>
+
+        <!-- Node 9: CUS Step 4 (x=594, y=44) -->
+        <rect x="594" y="44" width="100" height="64" rx="6" fill="#f5f5f5" stroke="rgba(45,49,66,0.25)" stroke-width="1"/>
+        <rect x="598" y="48" width="18" height="10" rx="3" fill="rgba(45,49,66,0.12)"/>
+        <text x="607" y="55" fill="#2d3142" font-size="6" font-weight="600" font-family="'Geist Mono', monospace" text-anchor="middle">CUS</text>
+        <text x="644" y="67" fill="#2d3142" font-size="9" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Online &amp; SLA</text>
+        <text x="644" y="79" fill="#4f5d75" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">ONU green · closed</text>
+        <text x="644" y="91" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">Portal status</text>
+        <rect x="598" y="98" width="16" height="8" rx="3" fill="#4a7c59"/>
+        <text x="606" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">LS</text>
+        <rect x="674" y="98" width="16" height="8" rx="3" fill="#6e6479"/>
+        <text x="682" y="104" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">WB</text>
+
+        <!-- LEGEND STRIP (3 rows at y=372, 393, 415) -->
+        <!-- Row 1: STEPS -->
+        <text x="144" y="375" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" letter-spacing="0.14em">STEPS</text>
+        <rect x="210" y="366" width="22" height="12" rx="6" fill="rgba(45,49,66,0.12)"/>
+        <text x="221" y="375" fill="#2d3142" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">01</text>
+        <text x="236" y="375" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Report</text>
+
+        <rect x="288" y="366" width="22" height="12" rx="6" fill="rgba(45,49,66,0.12)"/>
+        <text x="299" y="375" fill="#2d3142" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">02</text>
+        <text x="314" y="375" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Diagnose</text>
+
+        <rect x="378" y="366" width="22" height="12" rx="6" fill="rgba(45,49,66,0.12)"/>
+        <text x="389" y="375" fill="#2d3142" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">03</text>
+        <text x="404" y="375" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Correlate</text>
+
+        <rect x="468" y="366" width="22" height="12" rx="6" fill="rgba(191,69,32,0.20)"/>
+        <text x="479" y="375" fill="#bf4520" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">04</text>
+        <text x="494" y="375" fill="#bf4520" font-size="7.5" font-weight="600" font-family="'Geist', sans-serif">Dispatch</text>
+
+        <rect x="558" y="366" width="22" height="12" rx="6" fill="rgba(45,49,66,0.12)"/>
+        <text x="569" y="375" fill="#2d3142" font-size="6.5" font-family="'Geist Mono', monospace" text-anchor="middle">05</text>
+        <text x="584" y="375" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Resolve</text>
+
+        <!-- Row 2: DATA TYPE -->
+        <text x="144" y="396" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" letter-spacing="0.14em">DATA TYPE</text>
+        <rect x="210" y="389" width="16" height="8" rx="3" fill="#6e6479"/>
+        <text x="218" y="395" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">WB</text>
+        <text x="230" y="396" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Web UI</text>
+
+        <rect x="276" y="389" width="16" height="8" rx="3" fill="#4a7c59"/>
+        <text x="284" y="395" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">LS</text>
+        <text x="296" y="396" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Telemetry</text>
+
+        <rect x="352" y="389" width="16" height="8" rx="3" fill="#5e7a9b"/>
+        <text x="360" y="395" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">DB</text>
+        <text x="372" y="396" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Diagnostic</text>
+
+        <rect x="432" y="389" width="16" height="8" rx="3" fill="#b8915a"/>
+        <text x="440" y="395" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">TB</text>
+        <text x="452" y="396" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">InnoDB Row</text>
+
+        <rect x="516" y="389" width="16" height="8" rx="3" fill="#9c6b50"/>
+        <text x="524" y="395" fill="#ffffff" font-size="5" font-weight="700" font-family="'Geist Mono', monospace" text-anchor="middle">FL</text>
+        <text x="536" y="396" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Work Order</text>
+
+        <text x="600" y="396" fill="#5a6580" font-size="6.5" font-family="'Geist Mono', monospace">left=in · right=out</text>
+
+        <!-- Row 3: FLOW -->
+        <text x="144" y="418" fill="#4f5d75" font-size="7" font-weight="500" font-family="'Geist Mono', monospace" letter-spacing="0.14em">FLOW</text>
+        <line x1="210" y1="415" x2="232" y2="415" stroke="#4f5d75" stroke-width="1" marker-end="url(#arr-muted)"/>
+        <text x="238" y="418" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Step handoff</text>
+
+        <line x1="320" y1="415" x2="342" y2="415" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arr-muted)"/>
+        <text x="348" y="418" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Role trigger</text>
+
+        <line x1="430" y1="415" x2="452" y2="415" stroke="#bf4520" stroke-width="1.2" marker-end="url(#arr-accent)"/>
+        <text x="458" y="418" fill="#bf4520" font-size="7.5" font-weight="600" font-family="'Geist', sans-serif">Focal crew dispatch</text>
+
+        <line x1="572" y1="415" x2="594" y2="415" stroke="#2e5aa8" stroke-width="1" marker-end="url(#arr-link)"/>
+        <text x="600" y="418" fill="#4f5d75" font-size="7.5" font-family="'Geist', sans-serif">Restored status</text>
+      </svg>
+    </div>
+  </div>
+</body>
+</html>
