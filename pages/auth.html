@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Orion Link — Acceso Multi-Rol &amp; Registro de Suscriptores</title>
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a href="../index.html" class="brand">
+      <span class="brand-badge">FTTH · NOC</span>
+      <span>Orion Link CRM</span>
+    </a>
+    <div class="topbar-actions">
+      <button type="button" class="api-status-pill" data-api-indicator>
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>Verificando API...</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <a href="../index.html" class="btn btn-outline btn-sm">Volver al Inicio</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div class="card-header">
+        <h1 class="card-title">Selector Rápido de Credenciales Semilla (4 Roles Autenticados)</h1>
+        <span class="badge badge-info">JWT + Cookie HttpOnly</span>
+      </div>
+      <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
+        Selecciona cualquiera de los 4 perfiles de prueba para autocompletar el formulario y explorar sus permisos RBAC:
+      </p>
+      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+        <button type="button" class="btn btn-outline btn-sm" data-demo-email="admin@orionlink.gt" data-demo-role="Admin / NOC">
+          1. Admin / NOC (admin@orionlink.gt)
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" data-demo-email="soporte.n1@orionlink.gt" data-demo-role="Agente Soporte N1">
+          2. Agente Soporte N1 (soporte.n1@orionlink.gt)
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" data-demo-email="tecnico.alfa@orionlink.gt" data-demo-role="Técnico Cuadrilla Alfa">
+          3. Técnico Cuadrilla (tecnico.alfa@orionlink.gt)
+        </button>
+        <button type="button" class="btn btn-outline btn-sm" data-demo-email="maria.ortiz@cliente.gt" data-demo-role="Cliente Suscriptor (En Falla Masiva)">
+          4. Cliente Suscriptor (maria.ortiz@cliente.gt)
+        </button>
+      </div>
+    </section>
+
+    <div class="form-grid">
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Iniciar Sesión</h2>
+        </div>
+        <form id="login-form" style="display: grid; gap: 0.85rem;">
+          <div>
+            <label for="login-email">Correo Electrónico</label>
+            <input type="email" id="login-email" required placeholder="admin@orionlink.gt" value="admin@orionlink.gt">
+          </div>
+          <div>
+            <label for="login-password">Contraseña</label>
+            <input type="password" id="login-password" required placeholder="••••••••" value="password">
+          </div>
+          <button type="submit" class="btn btn-primary">Ingresar a Orion Link</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="card-header">
+          <h2 class="card-title">Registro de Nuevo Suscriptor FTTH</h2>
+        </div>
+        <form id="register-form" style="display: grid; gap: 0.75rem;">
+          <div class="form-grid">
+            <div>
+              <label for="reg-dpi">DPI (13 dígitos)</label>
+              <input type="text" id="reg-dpi" required minlength="13" maxlength="13" placeholder="2499887760101">
+            </div>
+            <div>
+              <label for="reg-phone">Teléfono (8 dígitos)</label>
+              <input type="text" id="reg-phone" required minlength="8" maxlength="8" placeholder="55667788">
+            </div>
+          </div>
+          <div class="form-grid">
+            <div>
+              <label for="reg-first-name">Nombres</label>
+              <input type="text" id="reg-first-name" required placeholder="Andrea Carolina">
+            </div>
+            <div>
+              <label for="reg-last-name">Apellidos</label>
+              <input type="text" id="reg-last-name" required placeholder="Solares Méndez">
+            </div>
+          </div>
+          <div>
+            <label for="reg-email">Correo Electrónico</label>
+            <input type="email" id="reg-email" required placeholder="andrea.solares@cliente.gt">
+          </div>
+          <div>
+            <label for="reg-password">Contraseña (mínimo 8 caracteres)</label>
+            <input type="password" id="reg-password" required minlength="8" placeholder="••••••••">
+          </div>
+          <button type="submit" class="btn btn-outline">Registrar Cuenta de Suscriptor</button>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="../js/auth.js"></script>
+</body>
+</html>
