@@ -6,6 +6,19 @@ export class AuthPageController {
     static async init() {
         ThemeManager.init();
         await UIUtils.bindApiConnectionIndicator();
+
+        // Si el usuario llega a auth.html tras cerrar sesión o desde otra vista,
+        // verificamos si tiene una sesión real válida en el servidor.
+        if (ApiClient.hasActiveSessionFlag()) {
+            try {
+                await ApiClient.get('/auth/me');
+                window.location.replace('./dashboard.html');
+                return;
+            } catch {
+                ApiClient.clearSession();
+            }
+        }
+
         AuthPageController.bindQuickRoleButtons();
         AuthPageController.bindForms();
     }
@@ -36,7 +49,7 @@ export class AuthPageController {
                     const res = await ApiClient.post('/auth/login', { email, password });
                     ApiClient.setSession(res.accessToken, res.data);
                     UIUtils.showToast(`Bienvenido, ${res.data.fullName}`, 'success');
-                    window.location.href = './dashboard.html';
+                    window.location.replace('./dashboard.html');
                 } catch (err) {
                     UIUtils.showToast(err.message, 'error');
                 }
@@ -60,7 +73,7 @@ export class AuthPageController {
                     const res = await ApiClient.post('/auth/register', payload);
                     ApiClient.setSession(res.accessToken, res.data);
                     UIUtils.showToast('Cuenta de suscriptor creada correctamente.', 'success');
-                    window.location.href = './dashboard.html';
+                    window.location.replace('./dashboard.html');
                 } catch (err) {
                     UIUtils.showToast(err.message, 'error');
                 }
