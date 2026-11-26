@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Orion Link — Tickets de Soporte Técnico &amp; Gestión SLA</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/orion-link-mark.svg">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-page="tickets">
+  <header class="topbar">
+    <a href="../index.html" class="brand" aria-label="Orion Link Inicio">
+      <span class="brand-mark-tile">
+        <img src="../assets/img/orion-link-mark.svg" alt="Orion Link Isotipo">
+      </span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-wordmark">
+        <span class="brand-wordmark-orion">Orion</span>
+        <span class="brand-wordmark-link">Link</span>
+      </span>
+      <span class="brand-badge">FTTH · NOC</span>
+    </a>
+    <div class="topbar-actions">
+      <span class="badge badge-info" id="current-user-display">Verificando sesión...</span>
+      <button type="button" class="api-status-pill" data-api-indicator>
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>API</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-dashboard">Sincronizar</button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" id="role-page-nav" aria-label="Navegación Multipágina por Rol"></nav>
+
+    <section class="card" style="margin-bottom: 1.25rem;">
+      <span class="badge badge-info" id="role-workspace-badge">TICKETS &amp; SLA</span>
+      <h1 id="role-workspace-title" data-fixed-title style="font-size: 1.45rem; margin: 0.45rem 0 0.25rem;">Bandeja de Tickets de Soporte Técnico y Triaje N1/N2</h1>
+      <p id="role-workspace-subtitle" data-fixed-subtitle style="font-size: 0.9rem; color: var(--text-secondary);">
+        Apertura de incidentes por contrato, asociación automática con Fallas Masivas de Caja NAP y resolución remota de primer nivel.
+      </p>
+    </section>
+
+    <div id="active-outage-banner" class="outage-alert-banner hidden"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Abrir Nuevo Ticket de Soporte Técnico</h2>
+      </div>
+      <form id="form-create-ticket" style="display: grid; gap: 0.85rem;">
+        <div class="form-grid">
+          <div>
+            <label for="tck-contract-id">Contrato Afectado</label>
+            <select id="tck-contract-id" required></select>
+          </div>
+          <div>
+            <label for="tck-category">Categoría Técnica</label>
+            <select id="tck-category" required>
+              <option value="no_connection_los">Sin Conexión / Luz Roja LOS</option>
+              <option value="high_attenuation">Atenuación Óptica Alta (-25 a -27.9 dBm)</option>
+              <option value="slow_speed">Lentitud / Intermitencia</option>
+              <option value="wifi_router">Configuración Wi-Fi / Router</option>
+              <option value="onu_power">Falla de Energía en ONU</option>
+            </select>
+          </div>
+          <div data-roles="admin,support_agent">
+            <label for="tck-priority">Prioridad SLA</label>
+            <select id="tck-priority">
+              <option value="medium">Media</option>
+              <option value="high">Alta</option>
+              <option value="critical">Crítica</option>
+              <option value="low">Baja</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label for="tck-subject">Asunto del Incidente</label>
+          <input type="text" id="tck-subject" required minlength="5" placeholder="Ej. Luz roja LOS parpadeando en ONU tras tormenta">
+        </div>
+        <div>
+          <label for="tck-description">Descripción Detallada</label>
+          <textarea id="tck-description" rows="2" required minlength="10" placeholder="Describa los síntomas o resultados de la telemetría..."></textarea>
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary">Registrar Ticket de Soporte</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Bandeja de Tickets de Soporte</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Ticket</th>
+              <th>Suscriptor &amp; Contrato</th>
+              <th>Categoría</th>
+              <th>Prioridad</th>
+              <th>Estado</th>
+              <th>Falla Masiva</th>
+              <th>Asunto</th>
+              <th>Resolución Rápida</th>
+            </tr>
+          </thead>
+          <tbody id="tickets-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>
