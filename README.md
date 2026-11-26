@@ -56,15 +56,21 @@ orion-link-frontend/
 │   └── diagrams/                   # Diagramas editoriales HTML/SVG (Arquitectura y Flujo de 4 Roles)
 ├── js/
 │   ├── api.js                      # Clase ApiClient (fetch wrapper no-store, Cookie HttpOnly + Bearer y guardia 401)
-│   ├── app.js                      # Clase DashboardApp (orquestador multi-rol y guardia anti-bfcache en botón Atrás)
+│   ├── app.js                      # Clase DashboardApp (orquestador multipágina RBAC y guardia anti-bfcache en botón Atrás)
 │   ├── auth.js                     # Clase AuthPageController (login, registro y selector rápido de 4 roles)
 │   ├── landing.js                  # Clase LandingController (monitor público de Cajas NAP y planes FTTH)
-│   ├── role-workspaces.js          # Jerarquía polimórfica RoleWorkspaceStrategy (4 dashboards especializados por rol)
+│   ├── role-workspaces.js          # Jerarquía polimórfica RoleWorkspaceStrategy (navegación multipágina y KPIs por rol)
 │   ├── theme.js                    # Clase ThemeManager (Modo Claro / Modo Noche NOC)
 │   └── utils.js                    # Clase UIUtils (Escape anti-XSS, Toasts, badges dBm y healthcheck)
 ├── pages/
 │   ├── auth.html                   # Portal de inicio de sesión y registro con DPI
-│   └── dashboard.html              # Consola operativa polimórfica según el rol autenticado
+│   ├── dashboard.html              # Centro de mando ejecutivo polimórfico (KPIs, widget exclusivo y directorio de módulos)
+│   ├── topology.html               # Vista independiente: Topología de Planta Externa (OLTs, Cajas NAP y Splitters)
+│   ├── outages.html                # Vista independiente: Monitor y declaración de Fallas Masivas FTTH
+│   ├── contracts.html              # Vista independiente: Contratos FTTH y Motor de Diagnóstico Óptico Remoto (dBm)
+│   ├── tickets.html                # Vista independiente: Bandeja de Tickets de Soporte Técnico y Triaje N1/N2
+│   ├── dispatches.html             # Vista independiente: Despacho de Cuadrillas y Certificación Óptica en Campo
+│   └── users.html                  # Vista independiente: Directorio y Auditoría RBAC de Usuarios (Exclusivo Admin)
 ├── .gitignore
 ├── index.html                      # Landing page y monitor público de red FTTH
 ├── netlify.toml                    # Configuración lista para despliegue en Netlify
