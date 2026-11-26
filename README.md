@@ -1,10 +1,17 @@
 # Orion Link — Frontend (`orion-link-frontend`)
 
 <p align="center">
-  <img src="./assets/img/orion-link-brand-sheet.jpg" alt="Identidad Visual Oficial Orion Link (Modo Claro & Modo Noche NOC)" width="760">
+  <img src="./assets/img/orion-link-logo.png" alt="Orion Link Logo Oficial" width="420">
 </p>
 
-Interfaz web desacoplada para **Orion Link**, Sistema CRM de Soporte Técnico y Operaciones ISP (FTTH), construida con **HTML5 semántico**, **CSS3 Bitema (Modo Claro / Modo Noche NOC)** y **JavaScript Vanilla modular (ES Modules 100% Orientado a Objetos)**, conectada en tiempo real con `orion-link-backend`.
+Interfaz web desacoplada para **Orion Link**, Sistema CRM de Soporte Técnico y Operaciones ISP (FTTH), construida con **HTML5 semántico**, **CSS3 Bitema (Modo Claro / Modo Noche NOC)** y **JavaScript Vanilla modular (ES Modules 100% Orientado a Objetos)**, conectada en tiempo real con [`orion-link-backend`](https://github.com/Anderson-Oloroso/orion-link-backend).
+
+## Ecosistema de Repositorios Hermanos (`Orion Link`)
+
+| Repositorio | Rol en la Arquitectura | Enlace Oficial en GitHub |
+|---|---|---|
+| **`orion-link-frontend`** *(este repositorio)* | Interfaz web multipágina desacoplada (HTML5 semántico, CSS3 Bitema Claro / Modo Noche NOC y Vanilla JS ES Modules 100% OOP) con 4 espacios de trabajo polimórficos por rol y 7 vistas HTML operativas. | [github.com/Anderson-Oloroso/orion-link-frontend](https://github.com/Anderson-Oloroso/orion-link-frontend) |
+| **`orion-link-backend`** *(repositorio hermano)* | API RESTful 100% OOP (Node.js 20+ ESM, Express 5), Seguridad JWT Dual (`HttpOnly` + Bearer con revocación `jti`), MySQL 8.0 (`InnoDB`), Triggers, Stored Procedures, Docker Compose, Swagger y Bruno. | [github.com/Anderson-Oloroso/orion-link-backend](https://github.com/Anderson-Oloroso/orion-link-backend) |
 
 ---
 
@@ -48,7 +55,7 @@ El frontend implementa una defensa multicapa en `js/api.js`, `js/auth.js` y `js/
 orion-link-frontend/
 ├── assets/
 │   └── img/
-│       ├── orion-link-brand-sheet.jpg # Lámina oficial de identidad visual bitema (Claro / Noche NOC)
+│       ├── orion-link-logo.png        # Logotipo horizontal oficial Orion Link
 │       └── orion-link-mark.svg        # Isotipo vectorial SVG (anillo orbital 3D + nodo FTTH de 4 puntas)
 ├── css/
 │   └── styles.css                  # Sistema de diseño bitema, tokens CSS de marca y semáforo óptico dBm
