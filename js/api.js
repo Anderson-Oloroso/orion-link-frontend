@@ -8,7 +8,16 @@ export class ApiClient {
     static STORAGE_TOKEN_KEY = 'orion_link_access_token';
     static STORAGE_USER_KEY = 'orion_link_current_user';
     static STORAGE_ACTIVE_SESSION_KEY = 'orion_link_session_active';
-    static DEFAULT_BASE_URL = 'http://localhost:5000/api/v1';
+    static PRODUCTION_BASE_URL = 'https://orion-link-backend-production.up.railway.app/api/v1';
+    static LOCAL_BASE_URL = 'http://localhost:5000/api/v1';
+
+    static get DEFAULT_BASE_URL() {
+        const host = typeof window !== 'undefined' ? window.location.hostname : '';
+        if (host === 'localhost' || host === '127.0.0.1' || host === '') {
+            return ApiClient.LOCAL_BASE_URL;
+        }
+        return ApiClient.PRODUCTION_BASE_URL;
+    }
 
     static getBaseUrl() {
         return localStorage.getItem(ApiClient.STORAGE_URL_KEY) || ApiClient.DEFAULT_BASE_URL;
