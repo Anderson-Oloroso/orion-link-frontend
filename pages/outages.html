@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Orion Link — Monitor y Correlación de Fallas Masivas FTTH</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/orion-link-mark.svg">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-page="outages">
+  <header class="topbar">
+    <a href="../index.html" class="brand" aria-label="Orion Link Inicio">
+      <span class="brand-mark-tile">
+        <img src="../assets/img/orion-link-mark.svg" alt="Orion Link Isotipo">
+      </span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-wordmark">
+        <span class="brand-wordmark-orion">Orion</span>
+        <span class="brand-wordmark-link">Link</span>
+      </span>
+      <span class="brand-badge">FTTH · NOC</span>
+    </a>
+    <div class="topbar-actions">
+      <span class="badge badge-info" id="current-user-display">Verificando sesión...</span>
+      <button type="button" class="api-status-pill" data-api-indicator>
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>API</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-dashboard">Sincronizar</button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" id="role-page-nav" aria-label="Navegación Multipágina por Rol"></nav>
+
+    <section class="card" style="margin-bottom: 1.25rem;">
+      <span class="badge badge-info" id="role-workspace-badge">FALLAS MASIVAS FTTH</span>
+      <h1 id="role-workspace-title" data-fixed-title style="font-size: 1.45rem; margin: 0.45rem 0 0.25rem;">Detección Temprana y Gestión de Fallas Masivas en Red de Fibra Óptica</h1>
+      <p id="role-workspace-subtitle" data-fixed-subtitle style="font-size: 0.9rem; color: var(--text-secondary);">
+        Correlación automática cuando &ge; 3 ONUs de una misma Caja NAP caen en pérdida de señal (LOS) y declaración manual del NOC.
+      </p>
+    </section>
+
+    <div id="active-outage-banner" class="outage-alert-banner hidden"></div>
+
+    <div class="card" data-roles="admin">
+      <div class="card-header">
+        <h2 class="card-title">Declarar Falla Masiva de Planta Externa (Exclusivo Admin / NOC)</h2>
+      </div>
+      <form id="form-declare-outage" class="form-grid" style="align-items: end;">
+        <div>
+          <label for="out-nap-id">Caja NAP Afectada</label>
+          <select id="out-nap-id" required></select>
+        </div>
+        <div>
+          <label for="out-cause">Causa Raíz</label>
+          <select id="out-cause">
+            <option value="fiber_cut">Corte de Fibra Exterior</option>
+            <option value="splitter_damage">Daño en Splitter Óptico</option>
+            <option value="olt_pon_card">Avería en Tarjeta PON OLT</option>
+            <option value="vandalism">Vandalismo en Poste</option>
+          </select>
+        </div>
+        <div>
+          <label for="out-severity">Severidad</label>
+          <select id="out-severity">
+            <option value="critical">Crítica</option>
+            <option value="major">Mayor</option>
+          </select>
+        </div>
+        <div>
+          <label for="out-affected">Contratos Afectados</label>
+          <input type="number" id="out-affected" min="1" value="3">
+        </div>
+        <div>
+          <label for="out-title">Título del Incidente Masivo</label>
+          <input type="text" id="out-title" required placeholder="Corte de distribución en poste principal">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-danger" style="width: 100%;">Declarar Falla Masiva</button>
+        </div>
+      </form>
+    </div>
+
+    <section class="card">
+      <div class="card-header">
+        <h2 class="card-title">Bitácora de Fallas Masivas FTTH (mass_outages)</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Caja NAP / OLT</th>
+              <th>Título del Incidente</th>
+              <th>Contratos Afectados</th>
+              <th>Estado</th>
+              <th>Resolución NOC</th>
+            </tr>
+          </thead>
+          <tbody id="outages-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>
