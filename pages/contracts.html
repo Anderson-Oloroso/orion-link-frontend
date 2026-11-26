@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Orion Link — Contratos FTTH &amp; Diagnóstico Óptico Remoto</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/img/orion-link-mark.svg">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body data-page="contracts">
+  <header class="topbar">
+    <a href="../index.html" class="brand" aria-label="Orion Link Inicio">
+      <span class="brand-mark-tile">
+        <img src="../assets/img/orion-link-mark.svg" alt="Orion Link Isotipo">
+      </span>
+      <span class="brand-divider" aria-hidden="true"></span>
+      <span class="brand-wordmark">
+        <span class="brand-wordmark-orion">Orion</span>
+        <span class="brand-wordmark-link">Link</span>
+      </span>
+      <span class="brand-badge">FTTH · NOC</span>
+    </a>
+    <div class="topbar-actions">
+      <span class="badge badge-info" id="current-user-display">Verificando sesión...</span>
+      <button type="button" class="api-status-pill" data-api-indicator>
+        <span class="status-dot" data-api-dot></span>
+        <span data-api-text>API</span>
+      </button>
+      <button type="button" class="btn btn-outline btn-sm" id="btn-refresh-dashboard">Sincronizar</button>
+      <button type="button" class="btn btn-outline btn-sm" data-action="toggle-theme">Modo Noche NOC</button>
+      <button type="button" class="btn btn-danger btn-sm" id="btn-logout">Cerrar Sesión</button>
+    </div>
+  </header>
+
+  <main class="container">
+    <nav class="tabs" id="role-page-nav" aria-label="Navegación Multipágina por Rol"></nav>
+
+    <section class="card" style="margin-bottom: 1.25rem;">
+      <span class="badge badge-info" id="role-workspace-badge">CONTRATOS &amp; TELEMETRÍA</span>
+      <h1 id="role-workspace-title" data-fixed-title style="font-size: 1.45rem; margin: 0.45rem 0 0.25rem;">Contratos de Fibra Óptica y Motor de Diagnóstico Remoto (dBm)</h1>
+      <p id="role-workspace-subtitle" data-fixed-subtitle style="font-size: 0.9rem; color: var(--text-secondary);">
+        Medición en tiempo real de potencia óptica recibida (Rx dBm), latencia y pérdida de paquetes sobre terminales ONUs.
+      </p>
+    </section>
+
+    <div id="active-outage-banner" class="outage-alert-banner hidden"></div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Diagnóstico Óptico Remoto de Conectividad (sp_run_remote_diagnostic)</h2>
+        <span class="badge badge-info">Telemetría GPON en Vivo</span>
+      </div>
+      <form id="form-run-diagnostic" class="form-grid" style="align-items: end;">
+        <div>
+          <label for="diag-contract-id">Contrato / Equipo Terminal ONU</label>
+          <select id="diag-contract-id" required></select>
+        </div>
+        <div data-roles="admin,support_agent">
+          <label for="diag-simulated-rx">Inyección Rx de Prueba (dBm · ej. -19.2, -26.8 o -40.0 LOS)</label>
+          <input type="number" step="0.05" min="-45" max="-10" id="diag-simulated-rx" placeholder="Vacío = medir potencia actual">
+        </div>
+        <div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Ejecutar Diagnóstico Óptico</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Contratos FTTH y Estado de Terminales Ópticas (ONUs)</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>No. Contrato</th>
+              <th>Suscriptor</th>
+              <th>Plan Fibra</th>
+              <th>Caja NAP &amp; Puerto</th>
+              <th>Serie &amp; Modelo ONU</th>
+              <th>Potencia Rx (dBm)</th>
+              <th>Acción Rápida</th>
+            </tr>
+          </thead>
+          <tbody id="contracts-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Bitácora de Diagnósticos Remotos</h2>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Contrato</th>
+              <th>NAP / ONU</th>
+              <th>Potencia Rx</th>
+              <th>Latencia / Pérdida</th>
+              <th>Diagnóstico</th>
+              <th>Acción Recomendada</th>
+            </tr>
+          </thead>
+          <tbody id="diagnostics-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="../js/app.js"></script>
+</body>
+</html>

@@ -4,15 +4,20 @@ import { UIUtils } from './utils.js';
 import { RoleWorkspaceStrategy } from './role-workspaces.js';
 
 /**
- * Controlador Orientado a Objetos del Dashboard Multi-Rol de Orion Link
- * 1. Protección estricta contra Back-Forward Cache (bfcache): si el usuario cierra sesión
- *    y presiona "Atrás" en el navegador, se fuerza la verificación y expulsión inmediata.
- * 2. Polimorfismo de Interfaz por Rol: delega en RoleWorkspaceStrategy (AdminNocWorkspace,
- *    SupportAgentWorkspace, FieldTechWorkspace y CustomerPortalWorkspace).
+ * Controlador Orientado a Objetos Multipágina de Orion Link
+ * - Orquesta las 7 páginas autenticadas desacopladas:
+ *   1. pages/dashboard.html   (Centro de mando y KPIs polimórficos por rol)
+ *   2. pages/topology.html    (Topología OLT & Cajas NAP)
+ *   3. pages/outages.html     (Monitor y declaración de Fallas Masivas FTTH)
+ *   4. pages/contracts.html   (Contratos FTTH & Diagnóstico Óptico Remoto)
+ *   5. pages/tickets.html     (Tickets de Soporte & SLA)
+ *   6. pages/dispatches.html  (Órdenes de Cuadrilla en Campo & Certificación dBm)
+ *   7. pages/users.html       (Directorio y Auditoría RBAC de Usuarios)
  */
 export class DashboardApp {
     static currentUser = null;
     static workspaceStrategy = null;
+    static currentPageId = 'dashboard';
     static state = {
         summary: {},
         contracts: [],
@@ -26,6 +31,7 @@ export class DashboardApp {
     };
 
     static async init() {
+        DashboardApp.currentPageId = document.body?.dataset?.page || 'dashboard';
         DashboardApp.installBackButtonGuard();
         ThemeManager.init();
         await UIUtils.bindApiConnectionIndicator();
@@ -36,10 +42,16 @@ export class DashboardApp {
         }
 
         DashboardApp.workspaceStrategy = RoleWorkspaceStrategy.createForRole(DashboardApp.currentUser.role);
-        DashboardApp.applyRoleHeaderAndTabs();
-        DashboardApp.bindTabs();
+
+        // Guardia RBAC por archivo HTML: si el rol actual intenta abrir una página no autorizada, redirige a dashboard.html
+        if (!DashboardApp.workspaceStrategy.isPageAllowed(DashboardApp.currentPageId)) {
+            window.location.replace('./dashboard.html');
+            return;
+        }
+
+        DashboardApp.applyRoleHeaderAndNavigation();
         DashboardApp.bindActions();
-        await DashboardApp.refreshAllData();
+        await DashboardApp.refreshPageData();
     }
 
     /**
@@ -67,10 +79,6 @@ export class DashboardApp {
         window.location.replace('./auth.html');
     }
 
-    /**
-     * Verificación estricta de sesión: NUNCA cae en datos cacheados si la sesión fue cerrada
-     * o si el servidor devuelve 401 Unauthorized.
-     */
     static async verifySessionStrict() {
         if (!ApiClient.hasActiveSessionFlag()) {
             DashboardApp.forceRedirectToLogin();
@@ -97,7 +105,7 @@ export class DashboardApp {
         }
     }
 
-    static applyRoleHeaderAndTabs() {
+    static applyRoleHeaderAndNavigation() {
         const strategy = DashboardApp.workspaceStrategy;
         const role = DashboardApp.currentUser.role;
 
@@ -106,10 +114,28 @@ export class DashboardApp {
         const subtitleEl = document.getElementById('role-workspace-subtitle');
 
         if (badgeEl) badgeEl.textContent = strategy.badgeText;
-        if (titleEl) titleEl.textContent = strategy.workspaceTitle;
-        if (subtitleEl) subtitleEl.textContent = strategy.workspaceSubtitle;
+        if (titleEl && !titleEl.hasAttribute('data-fixed-title')) {
+            titleEl.textContent = strategy.workspaceTitle;
+        }
+        if (subtitleEl && !subtitleEl.hasAttribute('data-fixed-subtitle')) {
+            subtitleEl.textContent = strategy.workspaceSubtitle;
+        }
 
-        // Mostrar u ocultar elementos exclusivos por atributo data-roles
+        // Renderizar barra de navegación multipágina filtrada estrictamente por rol
+        const navContainer = document.getElementById('role-page-nav');
+        if (navContainer) {
+            const navItems = strategy.getNavigationItems();
+            navContainer.innerHTML = navItems
+                .map(
+                    (item) => `
+                    <a href="${item.file}" class="tab-btn ${item.id === DashboardApp.currentPageId ? 'active' : ''}">
+                        ${UIUtils.escapeHtml(item.label)}
+                    </a>`
+                )
+                .join('');
+        }
+
+        // Mostrar u ocultar controles exclusivos por atributo data-roles
         document.querySelectorAll('[data-roles]').forEach((el) => {
             const allowed = el.getAttribute('data-roles').split(',').map((r) => r.trim());
             if (!allowed.includes(role)) {
@@ -118,41 +144,6 @@ export class DashboardApp {
                 el.classList.remove('hidden');
             }
         });
-
-        // Filtrar las pestañas permitidas para este rol y activar su pestaña principal por defecto
-        const allowedTabs = strategy.allowedTabs;
-        const tabButtons = document.querySelectorAll('.tab-btn');
-        const tabPanels = document.querySelectorAll('.tab-panel');
-
-        tabButtons.forEach((btn) => {
-            const tabId = btn.getAttribute('data-tab');
-            if (!allowedTabs.includes(tabId)) {
-                btn.classList.add('hidden');
-                btn.classList.remove('active');
-            } else {
-                btn.classList.remove('hidden');
-                btn.classList.toggle('active', tabId === strategy.defaultTab);
-            }
-        });
-
-        tabPanels.forEach((panel) => {
-            panel.classList.toggle('active', panel.id === strategy.defaultTab);
-        });
-    }
-
-    static bindTabs() {
-        const buttons = document.querySelectorAll('.tab-btn');
-        const panels = document.querySelectorAll('.tab-panel');
-        buttons.forEach((btn) => {
-            btn.addEventListener('click', () => {
-                if (btn.classList.contains('hidden')) return;
-                const target = btn.getAttribute('data-tab');
-                buttons.forEach((b) => b.classList.remove('active'));
-                panels.forEach((p) => p.classList.remove('active'));
-                btn.classList.add('active');
-                document.getElementById(target)?.classList.add('active');
-            });
-        });
     }
 
     static bindActions() {
@@ -160,16 +151,16 @@ export class DashboardApp {
             try {
                 await ApiClient.post('/auth/logout', {});
             } catch {
-                // Continuar con limpieza total en cliente
+                // Limpieza total en cliente
             }
             DashboardApp.forceRedirectToLogin();
         });
 
         document.getElementById('btn-refresh-dashboard')?.addEventListener('click', () => {
-            DashboardApp.refreshAllData();
+            DashboardApp.refreshPageData();
         });
 
-        // 1. Diagnóstico Remoto FTTH
+        // 1. Diagnóstico Remoto FTTH (pages/contracts.html)
         document.getElementById('form-run-diagnostic')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const contractId = Number(document.getElementById('diag-contract-id').value);
@@ -179,13 +170,13 @@ export class DashboardApp {
             try {
                 const res = await ApiClient.post('/diagnostics/run', { contractId, simulatedRxDbm });
                 UIUtils.showToast(res.message, res.data.opticalHealth === 'critical' ? 'error' : 'success');
-                await DashboardApp.refreshAllData();
+                await DashboardApp.refreshPageData();
             } catch (err) {
                 UIUtils.showToast(err.message, 'error');
             }
         });
 
-        // 2. Nuevo Ticket de Soporte
+        // 2. Nuevo Ticket de Soporte (pages/tickets.html)
         document.getElementById('form-create-ticket')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
@@ -200,13 +191,13 @@ export class DashboardApp {
                 const res = await ApiClient.post('/tickets', payload);
                 UIUtils.showToast(res.message, 'success');
                 e.target.reset();
-                await DashboardApp.refreshAllData();
+                await DashboardApp.refreshPageData();
             } catch (err) {
                 UIUtils.showToast(err.message, 'error');
             }
         });
 
-        // 3. Declarar Falla Masiva Manual (Admin / NOC)
+        // 3. Declarar Falla Masiva Manual (pages/outages.html)
         document.getElementById('form-declare-outage')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const napVal = document.getElementById('out-nap-id').value;
@@ -223,13 +214,13 @@ export class DashboardApp {
                 const res = await ApiClient.post('/outages', payload);
                 UIUtils.showToast(res.message, 'success');
                 e.target.reset();
-                await DashboardApp.refreshAllData();
+                await DashboardApp.refreshPageData();
             } catch (err) {
                 UIUtils.showToast(err.message, 'error');
             }
         });
 
-        // 4. Nueva Orden de Despacho de Cuadrilla
+        // 4. Nueva Orden de Despacho de Cuadrilla (pages/dispatches.html)
         document.getElementById('form-create-dispatch')?.addEventListener('submit', async (e) => {
             e.preventDefault();
             const ticketVal = document.getElementById('dsp-ticket-id').value;
@@ -246,28 +237,44 @@ export class DashboardApp {
                 const res = await ApiClient.post('/dispatches', payload);
                 UIUtils.showToast(res.message, 'success');
                 e.target.reset();
-                await DashboardApp.refreshAllData();
+                await DashboardApp.refreshPageData();
             } catch (err) {
                 UIUtils.showToast(err.message, 'error');
             }
         });
     }
 
-    static async refreshAllData() {
+    static async refreshPageData() {
         const isStillAuth = await DashboardApp.verifySessionStrict();
         if (!isStillAuth) return;
 
-        await Promise.all([
-            DashboardApp.loadSummary(),
-            DashboardApp.loadActiveOutages(),
-            DashboardApp.loadContracts(),
-            DashboardApp.loadDiagnostics(),
-            DashboardApp.loadTickets(),
-            DashboardApp.loadCrewsAndDispatches(),
-            DashboardApp.loadTopology(),
-            DashboardApp.loadUsersIfAdmin()
-        ]);
+        const page = DashboardApp.currentPageId;
+        const tasks = [DashboardApp.loadActiveOutages()];
 
+        if (page === 'dashboard') {
+            tasks.push(
+                DashboardApp.loadSummary(),
+                DashboardApp.loadContracts(),
+                DashboardApp.loadDiagnostics(),
+                DashboardApp.loadTickets(),
+                DashboardApp.loadCrewsAndDispatches(),
+                DashboardApp.loadTopology()
+            );
+        } else if (page === 'topology') {
+            tasks.push(DashboardApp.loadTopology());
+        } else if (page === 'outages') {
+            tasks.push(DashboardApp.loadTopology());
+        } else if (page === 'contracts') {
+            tasks.push(DashboardApp.loadContracts(), DashboardApp.loadDiagnostics());
+        } else if (page === 'tickets') {
+            tasks.push(DashboardApp.loadContracts(), DashboardApp.loadTickets());
+        } else if (page === 'dispatches') {
+            tasks.push(DashboardApp.loadCrewsAndDispatches());
+        } else if (page === 'users') {
+            tasks.push(DashboardApp.loadUsersIfAdmin());
+        }
+
+        await Promise.all(tasks);
         DashboardApp.renderPolymorphicWorkspace();
     }
 
@@ -281,6 +288,11 @@ export class DashboardApp {
         const widgetContainer = document.getElementById('role-exclusive-widget');
         if (widgetContainer) {
             widgetContainer.innerHTML = DashboardApp.workspaceStrategy.renderRoleExclusiveWidget(DashboardApp.state);
+        }
+
+        const directoryContainer = document.getElementById('role-module-directory');
+        if (directoryContainer) {
+            directoryContainer.innerHTML = DashboardApp.workspaceStrategy.renderModuleDirectoryCards();
         }
     }
 
@@ -347,7 +359,7 @@ export class DashboardApp {
                         try {
                             const r = await ApiClient.put(`/outages/${id}/resolve`, { resolutionNotes: notes });
                             UIUtils.showToast(r.message, 'success');
-                            await DashboardApp.refreshAllData();
+                            await DashboardApp.refreshPageData();
                         } catch (err) {
                             UIUtils.showToast(err.message, 'error');
                         }
@@ -404,7 +416,7 @@ export class DashboardApp {
                         try {
                             const r = await ApiClient.post('/diagnostics/run', { contractId });
                             UIUtils.showToast(r.message, r.data.opticalHealth === 'critical' ? 'error' : 'success');
-                            await DashboardApp.refreshAllData();
+                            await DashboardApp.refreshPageData();
                         } catch (err) {
                             UIUtils.showToast(err.message, 'error');
                         }
@@ -418,11 +430,11 @@ export class DashboardApp {
 
     static async loadDiagnostics() {
         const tbody = document.getElementById('diagnostics-tbody');
-        if (!tbody) return;
         try {
             const res = await ApiClient.get('/diagnostics');
             const list = res.data || [];
             DashboardApp.state.diagnostics = list;
+            if (!tbody) return;
             tbody.innerHTML = list
                 .map(
                     (d) => `
@@ -439,18 +451,18 @@ export class DashboardApp {
                 .join('');
         } catch {
             DashboardApp.state.diagnostics = [];
-            tbody.innerHTML = '';
+            if (tbody) tbody.innerHTML = '';
         }
     }
 
     static async loadTickets() {
         const role = DashboardApp.currentUser?.role || 'customer';
         const tbody = document.getElementById('tickets-tbody');
-        if (!tbody) return;
         try {
             const res = await ApiClient.get('/tickets');
             const list = res.data || [];
             DashboardApp.state.tickets = list;
+            if (!tbody) return;
 
             tbody.innerHTML = list
                 .map(
@@ -485,7 +497,7 @@ export class DashboardApp {
                             resolutionSummary: summary
                         });
                         UIUtils.showToast(r.message, 'success');
-                        await DashboardApp.refreshAllData();
+                        await DashboardApp.refreshPageData();
                     } catch (err) {
                         UIUtils.showToast(err.message, 'error');
                     }
@@ -493,7 +505,7 @@ export class DashboardApp {
             });
         } catch {
             DashboardApp.state.tickets = [];
-            tbody.innerHTML = '';
+            if (tbody) tbody.innerHTML = '';
         }
     }
 
@@ -553,7 +565,7 @@ export class DashboardApp {
                                 fieldNotes: 'Cuadrilla en sitio iniciando medición con OPM en Caja NAP.'
                             });
                             UIUtils.showToast(r.message, 'info');
-                            await DashboardApp.refreshAllData();
+                            await DashboardApp.refreshPageData();
                         } catch (err) {
                             UIUtils.showToast(err.message, 'error');
                         }
@@ -576,7 +588,7 @@ export class DashboardApp {
                                 fieldNotes: notes
                             });
                             UIUtils.showToast(r.message, 'success');
-                            await DashboardApp.refreshAllData();
+                            await DashboardApp.refreshPageData();
                         } catch (err) {
                             UIUtils.showToast(err.message, 'error');
                         }
