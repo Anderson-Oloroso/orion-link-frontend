@@ -33,25 +33,14 @@
   <main class="container">
     <section class="card">
       <div class="card-header">
-        <h1 class="card-title">Selector Rápido de Credenciales Semilla (4 Roles Autenticados)</h1>
+        <h1 class="card-title">Directorio Activo de Perfiles RBAC (Consultado en Tiempo Real desde MySQL InnoDB)</h1>
         <span class="badge badge-info">JWT + Cookie HttpOnly</span>
       </div>
       <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 0.85rem;">
-        Selecciona cualquiera de los 4 perfiles de prueba para autocompletar el formulario y explorar sus permisos RBAC:
+        Selecciona cualquiera de las cuentas activas registradas en la base de datos para autocompletar su correo electrónico:
       </p>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
-        <button type="button" class="btn btn-outline btn-sm" data-demo-email="admin@orionlink.gt" data-demo-role="Admin / NOC">
-          1. Admin / NOC (admin@orionlink.gt)
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" data-demo-email="soporte.n1@orionlink.gt" data-demo-role="Agente Soporte N1">
-          2. Agente Soporte N1 (soporte.n1@orionlink.gt)
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" data-demo-email="tecnico.alfa@orionlink.gt" data-demo-role="Técnico Cuadrilla Alfa">
-          3. Técnico Cuadrilla (tecnico.alfa@orionlink.gt)
-        </button>
-        <button type="button" class="btn btn-outline btn-sm" data-demo-email="maria.ortiz@cliente.gt" data-demo-role="Cliente Suscriptor (En Falla Masiva)">
-          4. Cliente Suscriptor (maria.ortiz@cliente.gt)
-        </button>
+      <div id="db-roles-directory" style="display: flex; flex-wrap: wrap; gap: 0.6rem;">
+        <span class="badge badge-info">Consultando perfiles activos en MySQL...</span>
       </div>
     </section>
 
@@ -63,11 +52,11 @@
         <form id="login-form" style="display: grid; gap: 0.85rem;">
           <div>
             <label for="login-email">Correo Electrónico</label>
-            <input type="email" id="login-email" required placeholder="admin@orionlink.gt" value="admin@orionlink.gt">
+            <input type="email" id="login-email" required placeholder="Ingrese su correo registrado en MySQL">
           </div>
           <div>
             <label for="login-password">Contraseña</label>
-            <input type="password" id="login-password" required placeholder="••••••••" value="password">
+            <input type="password" id="login-password" required placeholder="••••••••">
           </div>
           <button type="submit" class="btn btn-primary">Ingresar a Orion Link</button>
         </form>
